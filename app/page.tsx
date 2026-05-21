@@ -230,7 +230,7 @@ export default function LandingPage() {
             <div className="w-7 h-7 rounded-md bg-gradient-to-b from-zinc-100 to-zinc-300 text-zinc-900 flex items-center justify-center font-bold text-sm shadow-[0_1px_0_0_rgba(255,255,255,0.2)_inset]">М</div>
             <span className="font-semibold text-sm">Маннру</span>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 Маннру Банк</p>
+          <p className="text-xs text-muted-foreground">2026 Маннру</p>
         </div>
         <div className="max-w-6xl mx-auto mt-4 pt-4 border-t">
           <p className="text-xs text-muted-foreground text-center">
