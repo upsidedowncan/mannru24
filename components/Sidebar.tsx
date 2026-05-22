@@ -22,12 +22,13 @@ import { useProgression } from "@/lib/progression";
 import { pageUnlockLevel } from "@/lib/constants";
 
 const navItems = [
-  { href: "/dashboard", label: "Главная", icon: LayoutDashboard, level: 1 },
-  { href: "/dashboard/cards", label: "Карты", icon: CreditCard, level: 1 },
-  { href: "/dashboard/history", label: "История", icon: History, level: 2 },
-  { href: "/dashboard/transfers", label: "Переводы", icon: ArrowLeftRight, level: 3 },
-  { href: "/dashboard/bonuses", label: "Бонусы", icon: Gift, level: 4 },
-  { href: "/dashboard/tasks", label: "Задания", icon: CheckSquare, level: 5 },
+  { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
+  { href: "/dashboard/cards", label: "Карты", icon: CreditCard },
+  { href: "/dashboard/tasks", label: "Задания", icon: CheckSquare },
+  { href: "/dashboard/history", label: "История", icon: History },
+  { href: "/dashboard/transfers", label: "Переводы", icon: ArrowLeftRight },
+  { href: "/dashboard/bonuses", label: "Бонусы", icon: Gift },
+  { href: "/dashboard/investments", label: "Инвестиции", icon: Star },
 ];
 
 export function Sidebar() {
@@ -70,7 +71,8 @@ export function Sidebar() {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
-          const isLocked = level < item.level;
+          const requiredLevel = pageUnlockLevel[item.href] || 1;
+          const isLocked = level < requiredLevel;
           return (
             <Link
               key={item.href}
@@ -86,8 +88,13 @@ export function Sidebar() {
               <item.icon className="w-4 h-4 flex-shrink-0" />
               {!collapsed && (
                 <>
-                  <span>{item.label}</span>
-                  {isLocked && <Lock className="w-3 h-3 ml-auto" />}
+                  <span className="truncate">{item.label}</span>
+                  {isLocked && (
+                    <div className="ml-auto flex items-center gap-1">
+                      <span className="text-[10px] bg-zinc-800 px-1 rounded text-zinc-500">Lvl {requiredLevel}</span>
+                      <Lock className="w-3 h-3 text-zinc-600" />
+                    </div>
+                  )}
                 </>
               )}
             </Link>

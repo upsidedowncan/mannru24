@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, CreditCard, Gift, CheckSquare, History, Lock } from "lucide-react";
 import { useProgression } from "@/lib/progression";
 
+import { pageUnlockLevel } from "@/lib/constants";
+
 const navItems = [
-  { href: "/dashboard", label: "Главная", icon: LayoutDashboard, level: 1 },
-  { href: "/dashboard/cards", label: "Карты", icon: CreditCard, level: 1 },
-  { href: "/dashboard/history", label: "История", icon: History, level: 2 },
-  { href: "/dashboard/transfers", label: "Переводы", icon: CheckSquare, level: 3 },
-  { href: "/dashboard/bonuses", label: "Бонусы", icon: Gift, level: 4 },
+  { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
+  { href: "/dashboard/cards", label: "Карты", icon: CreditCard },
+  { href: "/dashboard/tasks", label: "Задания", icon: CheckSquare },
+  { href: "/dashboard/history", label: "История", icon: History },
+  { href: "/dashboard/bonuses", label: "Бонусы", icon: Gift },
 ];
 
 export function MobileNavbar() {
@@ -18,11 +20,12 @@ export function MobileNavbar() {
   const { level } = useProgression();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t z-50">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-950/90 border-t border-zinc-900 z-50">
       <div className="flex items-center justify-around h-16 pb-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
-          const isLocked = level < item.level;
+          const requiredLevel = pageUnlockLevel[item.href] || 1;
+          const isLocked = level < requiredLevel;
           return (
             <Link
               key={item.href}

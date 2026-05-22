@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
-import { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel, levelThresholds, maxLevel } from "./constants";
+import { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel } from "./constants";
 
-export { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel, levelThresholds, maxLevel };
+export { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel };
 
 const DB_PATH = join(process.cwd(), "data", "db.json");
 
@@ -10,6 +10,7 @@ export type CardTier = "bronze" | "silver" | "gold" | "platinum" | "titanium" | 
 
 export interface Card {
   id: string;
+  userId: string;
   tier: CardTier;
   number: string;
   holder: string;
@@ -21,6 +22,7 @@ export interface Card {
 
 export interface Transaction {
   id: string;
+  userId: string;
   name: string;
   category: string;
   amount: number;
@@ -31,6 +33,7 @@ export interface Transaction {
 
 export interface Task {
   id: string;
+  userId: string;
   title: string;
   description: string;
   reward: string;
@@ -43,6 +46,7 @@ export interface Task {
 
 export interface Bonus {
   id: string;
+  userId: string;
   title: string;
   description: string;
   points: number;
@@ -52,7 +56,9 @@ export interface Bonus {
 }
 
 export interface UserProfile {
+  id: string;
   name: string;
+  passwordHash: string;
   phone: string;
   bonusBalance: number;
   totalEarned: number;
@@ -62,71 +68,90 @@ export interface UserProfile {
   xp: number;
 }
 
-export const emojiTiers: CardTier[] = ["gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
-
 interface Database {
+  users: UserProfile[];
   cards: Card[];
   transactions: Transaction[];
   tasks: Task[];
   bonuses: Bonus[];
-  user: UserProfile;
 }
 
 function getDefaultDb(): Database {
   return {
+    users: [],
     cards: [],
     transactions: [],
     tasks: [],
     bonuses: [],
-    user: {
-      name: "Александр",
-      phone: "",
-      bonusBalance: 0,
-      totalEarned: 0,
-      totalSpent: 0,
-      streak: 0,
-      level: 1,
-      xp: 0,
-    },
   };
 }
 
-function calculateLevel(xp: number): { level: number; currentXp: number; nextXp: number } {
+export function calculateLevel(xp: number): { level: number; currentXp: number; nextXp: number } {
+  // Formula: XP = Level * 100 for NEXT level.
+  // Level 1: 0-99 XP
+  // Level 2: 100-299 XP (2 * 100 = 200 needed for level 3)
+  // Wait, let's use a simpler one: Level = floor(sqrt(xp/100)) + 1 ?
+  // User asked for: XP = Level * 100 for each next level.
+  // Lvl 1 -> 2: 100 XP
+  // Lvl 2 -> 3: 200 XP
+  // Lvl 3 -> 4: 300 XP
+  // Total XP for Level N: sum_{i=1}^{N-1} (i * 100) = 100 * (N-1)*N / 2
+
   let level = 1;
-  for (let i = maxLevel; i >= 1; i--) {
-    if (xp >= levelThresholds[i]) {
-      level = i;
-      break;
-    }
+  while (true) {
+    const xpForNext = level * 100;
+    const totalXpForNext = (level * (level + 1) / 2) * 100;
+    if (xp < totalXpForNext) break;
+    level++;
   }
-  const currentXp = xp - levelThresholds[level];
-  const nextXp = level < maxLevel ? levelThresholds[level + 1] - levelThresholds[level] : 0;
+
+  const totalXpForCurrent = ((level - 1) * level / 2) * 100;
+  const currentXp = xp - totalXpForCurrent;
+  const nextXp = level * 100;
+
   return { level, currentXp, nextXp };
 }
 
-function addXp(db: Database, amount: number): number[] {
-  const oldLevel = db.user.level;
-  db.user.xp += amount;
-  const { level } = calculateLevel(db.user.xp);
-  db.user.level = level;
+export function addXp(db: Database, userId: string, amount: number): number[] {
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return [];
+
+  const oldLevel = user.level;
+  user.xp += amount;
+  const { level } = calculateLevel(user.xp);
+  user.level = level;
+
   if (level > oldLevel) {
     return Array.from({ length: level - oldLevel }, (_, i) => oldLevel + i + 1);
   }
   return [];
 }
 
-function readDb(): Database {
+export function readDb(): Database {
   if (!existsSync(DB_PATH)) {
     const defaultDb = getDefaultDb();
     writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2));
     return defaultDb;
   }
   const raw = readFileSync(DB_PATH, "utf-8");
-  return JSON.parse(raw) as Database;
+  try {
+    const data = JSON.parse(raw);
+    // Migration if old format
+    if (data.user && !data.users) {
+      return {
+        users: [{ ...data.user, id: "legacy-user", passwordHash: "" }],
+        cards: data.cards.map((c: any) => ({ ...c, userId: "legacy-user" })),
+        transactions: data.transactions.map((t: any) => ({ ...t, userId: "legacy-user" })),
+        tasks: data.tasks.map((t: any) => ({ ...t, userId: "legacy-user" })),
+        bonuses: data.bonuses.map((b: any) => ({ ...b, userId: "legacy-user" })),
+      };
+    }
+    return data as Database;
+  } catch (e) {
+    return getDefaultDb();
+  }
 }
 
-function writeDb(db: Database): void {
+export function writeDb(db: Database): void {
   writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
 }
-
-export { readDb, writeDb, calculateLevel, addXp };
