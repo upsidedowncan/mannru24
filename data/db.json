@@ -1,4 +1,43 @@
 {
+  "users": [
+    {
+      "name": "Александр",
+      "phone": "+7 (999) 123-45-67",
+      "bonusBalance": 12450,
+      "totalEarned": 16650,
+      "totalSpent": 8450,
+      "streak": 7,
+      "level": 4,
+      "levelProgress": 65,
+      "xp": 31,
+      "id": "legacy-user",
+      "passwordHash": ""
+    },
+    {
+      "id": "a5681477-7177-4dc6-a3f5-aba8841f1c41",
+      "name": "TestUser1779483151",
+      "passwordHash": "$argon2id$v=19$m=65536,t=2,p=1$r3Zd1EV6VMOMIHjPcVE/ir3Xt0De/D8SzbfFHBL6Z/Y$+6xv4TdBmEZn9OOgCNbTiUYrdZBVVhaMC0N+BcWRAs4",
+      "phone": "",
+      "bonusBalance": 1000,
+      "totalEarned": 1000,
+      "totalSpent": 0,
+      "streak": 1,
+      "level": 1,
+      "xp": 0
+    },
+    {
+      "id": "17507b1d-9aa6-445c-878a-563124f31537",
+      "name": "VerifyUser",
+      "passwordHash": "$argon2id$v=19$m=65536,t=2,p=1$/2EAghwuobusJQwA19VTAMw6YEE2C0uiT+fE98PsbRI$J9WQWlrv+oeq/X+OV5gwSkwOerCiC+IatqXzkUk6MZ0",
+      "phone": "",
+      "bonusBalance": 1000,
+      "totalEarned": 1000,
+      "totalSpent": 0,
+      "streak": 1,
+      "level": 1,
+      "xp": 0
+    }
+  ],
   "cards": [
     {
       "id": "9ae9d606-4b62-4ef4-a0ba-8c5ffd9c96d7",
@@ -8,7 +47,28 @@
       "balance": 1000,
       "expiry": "02/31",
       "createdAt": "2026-05-21T11:50:28.087Z",
-      "emojiCode": null
+      "emojiCode": null,
+      "userId": "legacy-user"
+    },
+    {
+      "id": "ae660c22-7fd3-40ac-b881-00957501f7cd",
+      "userId": "a5681477-7177-4dc6-a3f5-aba8841f1c41",
+      "tier": "bronze",
+      "number": "•••• •••• •••• 7887",
+      "holder": "TESTUSER1779483151",
+      "balance": 1000,
+      "expiry": "12/29",
+      "createdAt": "2026-05-22T20:52:31.795Z"
+    },
+    {
+      "id": "7be453fb-68b9-43a2-b244-e1e52fc7146d",
+      "userId": "17507b1d-9aa6-445c-878a-563124f31537",
+      "tier": "bronze",
+      "number": "•••• •••• •••• 7380",
+      "holder": "VERIFYUSER",
+      "balance": 1000,
+      "expiry": "12/29",
+      "createdAt": "2026-05-22T20:56:19.191Z"
     }
   ],
   "transactions": [],
@@ -22,7 +82,8 @@
       "progress": 0,
       "total": 3,
       "type": "daily",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-2",
@@ -33,7 +94,8 @@
       "progress": 0,
       "total": 10000,
       "type": "daily",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-3",
@@ -44,7 +106,8 @@
       "progress": 0,
       "total": 1000,
       "type": "daily",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-4",
@@ -55,7 +118,8 @@
       "progress": 0,
       "total": 1,
       "type": "daily",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-5",
@@ -66,7 +130,8 @@
       "progress": 0,
       "total": 1,
       "type": "weekly",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-6",
@@ -77,7 +142,8 @@
       "progress": 0,
       "total": 10,
       "type": "weekly",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-7",
@@ -88,7 +154,8 @@
       "progress": 0,
       "total": 2,
       "type": "weekly",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-8",
@@ -99,7 +166,8 @@
       "progress": 0,
       "total": 7,
       "type": "weekly",
-      "completed": true
+      "completed": true,
+      "userId": "legacy-user"
     },
     {
       "id": "task-9",
@@ -110,7 +178,8 @@
       "progress": 0,
       "total": 1,
       "type": "special",
-      "completed": false
+      "completed": false,
+      "userId": "legacy-user"
     },
     {
       "id": "task-10",
@@ -121,7 +190,8 @@
       "progress": 0,
       "total": 50000,
       "type": "special",
-      "completed": false
+      "completed": false,
+      "userId": "legacy-user"
     },
     {
       "id": "task-11",
@@ -132,7 +202,8 @@
       "progress": 0,
       "total": 1,
       "type": "special",
-      "completed": false
+      "completed": false,
+      "userId": "legacy-user"
     },
     {
       "id": "task-12",
@@ -143,7 +214,8 @@
       "progress": 0,
       "total": 1,
       "type": "special",
-      "completed": false
+      "completed": false,
+      "userId": "legacy-user"
     }
   ],
   "bonuses": [
@@ -154,7 +226,8 @@
       "points": 500,
       "category": "Кэшбэк",
       "expires": "3 дня",
-      "activated": true
+      "activated": true,
+      "userId": "legacy-user"
     },
     {
       "id": "bonus-2",
@@ -163,7 +236,8 @@
       "points": 300,
       "category": "Акции",
       "expires": "7 дней",
-      "activated": true
+      "activated": true,
+      "userId": "legacy-user"
     },
     {
       "id": "bonus-3",
@@ -172,7 +246,8 @@
       "points": 800,
       "category": "Кэшбэк",
       "expires": "5 дней",
-      "activated": true
+      "activated": true,
+      "userId": "legacy-user"
     },
     {
       "id": "bonus-4",
@@ -181,7 +256,8 @@
       "points": 400,
       "category": "Акции",
       "expires": "14 дней",
-      "activated": true
+      "activated": true,
+      "userId": "legacy-user"
     },
     {
       "id": "bonus-5",
@@ -190,7 +266,8 @@
       "points": 600,
       "category": "Кэшбэк",
       "expires": "10 дней",
-      "activated": true
+      "activated": true,
+      "userId": "legacy-user"
     },
     {
       "id": "bonus-6",
@@ -199,18 +276,8 @@
       "points": 1000,
       "category": "Акции",
       "expires": "30 дней",
-      "activated": true
+      "activated": true,
+      "userId": "legacy-user"
     }
-  ],
-  "user": {
-    "name": "Александр",
-    "phone": "+7 (999) 123-45-67",
-    "bonusBalance": 12450,
-    "totalEarned": 16650,
-    "totalSpent": 8450,
-    "streak": 7,
-    "level": 4,
-    "levelProgress": 65,
-    "xp": 31
-  }
+  ]
 }

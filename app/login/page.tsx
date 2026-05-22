@@ -14,16 +14,62 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState<"phone" | "password">("phone");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.length >= 10) setStep("password");
+    if (phone.length >= 5) {
+      setError(null);
+      setStep("password");
+    } else {
+      setError("Введите корректный номер или имя");
+    }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/dashboard");
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Try login first
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: phone, password }),
+      });
+
+      const loginData = await loginRes.json();
+
+      if (loginRes.ok) {
+        router.push("/dashboard");
+        return;
+      }
+
+      // If user not found, auto-register
+      if (loginRes.status === 404 && loginData.code === "USER_NOT_FOUND") {
+        const regRes = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: phone, password }),
+        });
+
+        if (regRes.ok) {
+          router.push("/dashboard");
+          return;
+        }
+
+        const regData = await regRes.json();
+        setError(regData.error || "Ошибка регистрации");
+      } else {
+        setError(loginData.error || "Неверный пароль");
+      }
+    } catch (err) {
+      setError("Произошла ошибка. Попробуйте еще раз.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -41,11 +87,16 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
+                {error}
+              </div>
+            )}
             {step === "phone" ? (
               <form onSubmit={handlePhoneSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Номер телефона</Label>
-                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (999) 123-45-67" autoFocus />
+                  <Label htmlFor="phone">Номер телефона или Логин</Label>
+                  <Input id="phone" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Александр" autoFocus />
                 </div>
                 <Button type="submit" variant="gradient" className="w-full gap-2" disabled={loading}>
                   {loading ? "Загрузка..." : "Продолжить"} <ArrowRight className="w-4 h-4" />

@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Check, CreditCard, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Card as CardType, CardTier } from "@/lib/db";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 const tierOrder: CardTier[] = ["bronze", "silver", "gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
 
@@ -117,13 +118,23 @@ export default function CardsPage() {
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const router = useRouter();
 
   const fetchCards = async () => {
     setLoading(true);
-    const res = await fetch("/api/cards");
-    const data = await res.json();
-    setCards(data);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/cards");
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      const data = await res.json();
+      setCards(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to fetch cards:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

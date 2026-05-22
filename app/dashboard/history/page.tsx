@@ -6,16 +6,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import type { Transaction } from "@/lib/db";
+import { useRouter } from "next/navigation";
 
 import { withAccess } from "@/components/AccessGuard";
 
 function HistoryPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/transactions").then((r) => r.json()).then((data) => { setTransactions(data); setLoading(false); });
-  }, []);
+    const fetchData = async () => {
+      try {
+        const res = await fetch("/api/transactions");
+        if (res.status === 401) {
+          router.push("/login");
+          return;
+        }
+        const data = await res.json();
+        setTransactions(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [router]);
 
   const totalIncome = transactions.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const totalExpense = Math.abs(transactions.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0));

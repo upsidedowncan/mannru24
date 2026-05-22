@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift, Flame, Star, Sparkles, Trophy, Clock, ArrowRight, CheckCircle2, Percent, Ticket, Zap } from "lucide-react";
 import { withAccess } from "@/components/AccessGuard";
 import type { Bonus, UserProfile } from "@/lib/db";
+import { useRouter } from "next/navigation";
 
 const iconMap: Record<string, typeof Gift> = {
   "Кэшбэк": Percent,
@@ -21,13 +22,28 @@ function BonusesPage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const router = useRouter();
 
   const fetchData = async () => {
     setLoading(true);
-    const [bonusesRes, userRes] = await Promise.all([fetch("/api/bonuses"), fetch("/api/user")]);
-    setBonuses(await bonusesRes.json());
-    setUser(await userRes.json());
-    setLoading(false);
+    try {
+      const [bonusesRes, userRes] = await Promise.all([fetch("/api/bonuses"), fetch("/api/user")]);
+
+      if (bonusesRes.status === 401 || userRes.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      const bonusesData = await bonusesRes.json();
+      const userData = await userRes.json();
+
+      setBonuses(Array.isArray(bonusesData) ? bonusesData : []);
+      setUser(userData && !userData.error ? userData : null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
