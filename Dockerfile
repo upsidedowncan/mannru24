@@ -23,8 +23,8 @@ RUN chown -R 1001:0 /opt/app-root/src
 USER 1001
 
 ENV NODE_ENV production
-ENV PORT 80
-EXPOSE 80
+ENV PORT 3000
+EXPOSE 3000
 
 # Start the application using Bun
 CMD ["bun", "run", "start"]
