@@ -200,6 +200,53 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="py-16 px-6 border-t bg-zinc-950">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-12 items-center">
+            <div className="flex-1 space-y-6">
+              <Badge variant="outline" className="border-blue-500/50 text-blue-400 bg-blue-500/5">Манифест дизайна</Badge>
+              <h2 className="text-4xl font-bold tracking-tight text-white">Система «Tinted»</h2>
+              <p className="text-zinc-400 leading-relaxed">
+                Мы устали от интерфейсов, которые пытаются быть «дружелюбными». Мы создали <span className="text-zinc-100 font-medium">Tinted</span> — систему, в которой нет места слабости.
+              </p>
+              <ul className="space-y-4">
+                <li className="flex gap-3">
+                  <div className="mt-1 w-5 h-5 rounded border border-zinc-700 flex items-center justify-center text-zinc-500 text-[10px] font-bold">01</div>
+                  <div>
+                    <h4 className="text-zinc-100 font-medium">Никакого стекла</h4>
+                    <p className="text-sm text-zinc-500">Глассморфизм и размытия — это попытка скрыть отсутствие вкуса. У нас только чистая геометрия и честная непрозрачность.</p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <div className="mt-1 w-5 h-5 rounded border border-zinc-700 flex items-center justify-center text-zinc-500 text-[10px] font-bold">02</div>
+                  <div>
+                    <h4 className="text-zinc-100 font-medium">Глубокие тени</h4>
+                    <p className="text-sm text-zinc-500">Мы используем самые тёмные оттенки чёрного, чтобы ваши глаза наконец-то отдохнули от белого шума интернета.</p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <div className="mt-1 w-5 h-5 rounded border border-zinc-700 flex items-center justify-center text-zinc-500 text-[10px] font-bold">03</div>
+                  <div>
+                    <h4 className="text-zinc-100 font-medium">Идеальные отступы</h4>
+                    <p className="text-sm text-zinc-500">Каждый пиксель на своём месте. Мы потратили сотни часов, чтобы вы чувствовали порядок там, где в жизни царит хаос.</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <div className="flex-1 relative">
+              <div className="aspect-square w-full max-w-[300px] mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center">
+                <div className="w-3/4 h-3/4 border border-zinc-700 rounded-xl flex items-center justify-center relative">
+                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-50"></div>
+                   <div className="w-1/2 h-1/2 bg-zinc-950 border border-zinc-800 shadow-2xl flex items-center justify-center text-zinc-600 font-mono text-xs rotate-12">
+                     TINTED
+                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="faq" className="py-16 px-6 border-t">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8"><h2 className="text-3xl font-bold tracking-tight mb-2">Честные ответы</h2></div>

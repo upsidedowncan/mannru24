@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ArrowUpRight, ArrowDownLeft, Percent, TrendingUp, Wallet, Send, QrCode, Plus, ChevronRight, CreditCard } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Percent, TrendingUp, Wallet, Send, QrCode, Plus, ChevronRight, CreditCard, Lock, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import Link from "next/link";
 import type { Card as CardType, Transaction, UserProfile } from "@/lib/db";
 
 export default function DashboardPage() {
@@ -44,10 +46,10 @@ export default function DashboardPage() {
   ];
 
   const quickActions = [
-    { label: "Перевод", icon: Send },
-    { label: "Оплата", icon: QrCode },
-    { label: "Пополнить", icon: Plus },
-    { label: "Инвестиции", icon: TrendingUp },
+    { label: "Перевод", icon: Send, level: 5, href: "/dashboard/transfers" },
+    { label: "Оплата", icon: QrCode, level: 1, href: "/dashboard" },
+    { label: "Пополнить", icon: Plus, level: 1, href: "/dashboard" },
+    { label: "Инвестиции", icon: TrendingUp, level: 15, href: "/dashboard/investments" },
   ];
 
   if (loading) {
@@ -106,17 +108,51 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {quickActions.map((action) => (
-            <Tooltip key={action.label}>
-              <TooltipTrigger asChild>
-                <button className="flex flex-col items-center gap-2 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center"><action.icon className="w-5 h-5" /></div>
-                  <span className="text-sm font-medium">{action.label}</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent><p>{action.label}</p></TooltipContent>
-            </Tooltip>
-          ))}
+          {quickActions.map((action) => {
+            const isLocked = (user?.level || 1) < action.level;
+            const content = (
+              <div className="relative">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isLocked ? "bg-zinc-900" : "bg-zinc-800"}`}>
+                  <action.icon className={`w-5 h-5 ${isLocked ? "text-zinc-600" : "text-zinc-100"}`} />
+                </div>
+                {isLocked && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800">
+                    <Lock className="w-2 h-2 text-zinc-500" />
+                  </div>
+                )}
+              </div>
+            );
+
+            return (
+              <Tooltip key={action.label}>
+                <TooltipTrigger asChild>
+                  {isLocked ? (
+                    <button
+                      onClick={() => toast.error(`Куда лезешь?`, {
+                        description: `Эта функция доступна только для элиты ${action.level} уровня. Качайся.`,
+                        icon: <AlertCircle className="w-4 h-4 text-red-500" />
+                      })}
+                      className="flex flex-col items-center gap-2 p-4 rounded-lg border transition-all bg-zinc-950/50 border-zinc-900 opacity-50 cursor-pointer"
+                    >
+                      {content}
+                      <span className="text-sm font-medium text-zinc-500">{action.label}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      href={action.href}
+                      className="flex flex-col items-center gap-2 p-4 rounded-lg border transition-all bg-zinc-900 border-zinc-800 hover:bg-zinc-800"
+                    >
+                      {content}
+                      <span className="text-sm font-medium text-zinc-200">{action.label}</span>
+                    </Link>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isLocked ? `Доступно с ${action.level} уровня` : action.label}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
 
         {transactions.length > 0 && (

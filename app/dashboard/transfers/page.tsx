@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, Smile, Copy, Check, Lock } from "lucide-react";
+import { ArrowUpRight, Smile, Copy, Check, Lock, AlertCircle, Trash2 } from "lucide-react";
 import { withAccess } from "@/components/AccessGuard";
 import type { Transaction, Card as CardType } from "@/lib/db";
 import { tierMeta } from "@/components/BankCard";
 import { useProgression } from "@/lib/progression";
 
-const quickEmojis = ["🐶","🐱","🐰","🦊","🐻","🐼","🐯","🐮","🐷","🐸","🦄","🐝","🦋","🐢","🐍","🐙","🦈","🐊","🐘","🦒"];
+const quickEmojis = ["🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁"];
 
 function TransfersPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -21,6 +21,7 @@ function TransfersPage() {
   const [amount, setAmount] = useState("");
   const [emojiCode, setEmojiCode] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { triggerLevelUps } = useProgression();
@@ -30,15 +31,40 @@ function TransfersPage() {
     fetch("/api/transactions?limit=10").then((r) => r.json()).then(setTransactions);
   }, []);
 
+  // Validation: Address consists strictly of 4 emojis
+  // We use a simple length check and emoji splitting for the UI
+  const emojiArray = useMemo(() => {
+    // This is a naive split, but good enough for the UI mask
+    return Array.from(emojiCode);
+  }, [emojiCode]);
+
+  const isValid = emojiArray.length === 4;
+
   const handleSend = async () => {
-    if (!emojiCode || !amount) return;
+    if (!isValid || !amount) {
+      setError("Адрес получателя должен состоять ровно из 4-х эмодзи!");
+      return;
+    }
+    setError(null);
     setSending(true);
     const res = await fetch("/api/transactions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: `Перевод ${emojiCode}`, category: "Переводы", amount: -parseFloat(amount), emojiCode }),
+      body: JSON.stringify({
+        name: `Перевод по коду ${emojiCode}`,
+        category: "Переводы",
+        amount: -parseFloat(amount),
+        emojiCode
+      }),
     });
     const data = await res.json();
+
+    if (res.status !== 200) {
+      setError(data.error || "Ошибка перевода");
+      setSending(false);
+      return;
+    }
+
     if (data.levelUps?.length) {
       triggerLevelUps(data.levelUps, data.level, data.xp, data.currentXp, data.nextXp);
     }
@@ -56,12 +82,12 @@ function TransfersPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const emojiCards = cards.filter((c) => ["gold","platinum","titanium","ruby","emerald","sapphire","diamond","black","obsidian"].includes(c.tier));
-  const basicCards = cards.filter((c) => !["gold","platinum","titanium","ruby","emerald","sapphire","diamond","black","obsidian"].includes(c.tier));
+  const emojiCards = cards.filter((c) => !!c.emojiCode);
+  const basicCards = cards.filter((c) => !c.emojiCode);
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl font-semibold tracking-tight">Переводы</h1><p className="text-muted-foreground text-sm mt-1">Мгновенные переводы по emoji-коду</p></div>
+      <div><h1 className="text-2xl font-semibold tracking-tight text-white">Переводы</h1><p className="text-muted-foreground text-sm mt-1">Мгновенные переводы по секретному emoji-коду</p></div>
 
       {completedTasks.length > 0 && (
         <Card className="border-emerald-500/50 bg-emerald-500/5">
@@ -74,101 +100,107 @@ function TransfersPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader><CardTitle>Отправить по emoji-коду</CardTitle><CardDescription>Введите emoji-код получателя и сумму</CardDescription></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Emoji-код получателя</Label>
-            <Input value={emojiCode} onChange={(e) => setEmojiCode(e.target.value)} placeholder="🐶" className="text-2xl" />
-            <div className="flex gap-1.5 flex-wrap">
-              {quickEmojis.map((e) => (
-                <button key={e} onClick={() => setEmojiCode((prev) => prev + e)} className="w-9 h-9 rounded-lg bg-secondary hover:bg-accent transition-colors text-lg flex items-center justify-center">
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader><CardTitle className="text-white">Отправить перевод</CardTitle><CardDescription>Введите 4-эмодзи код получателя</CardDescription></CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <Label className="text-zinc-400">Emoji-код (Ровно 4 символа)</Label>
+            <div className="flex gap-2">
+              {[0, 1, 2, 3].map((idx) => (
+                <div key={idx} className="w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner">
+                  {emojiArray[idx] || ""}
+                </div>
+              ))}
+              {emojiArray.length > 0 && (
+                 <Button variant="ghost" size="icon" onClick={() => setEmojiCode("")} className="h-14 w-14 rounded-xl border border-zinc-900 hover:bg-zinc-900">
+                   <Trash2 className="w-5 h-5 text-zinc-500" />
+                 </Button>
+              )}
+            </div>
+
+            <div className="flex gap-2 flex-wrap max-w-md pt-2">
+              {["🦒","🐼","🐦","🦁","🦊","🐻","🐯","🐹","🐰","🐨"].map((e) => (
+                <button
+                  key={e}
+                  disabled={emojiArray.length >= 4}
+                  onClick={() => setEmojiCode((prev) => prev + e)}
+                  className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg flex items-center justify-center"
+                >
                   {e}
                 </button>
               ))}
             </div>
           </div>
+
           <div className="space-y-2">
-            <Label>Сумма</Label>
+            <Label className="text-zinc-400">Сумма</Label>
             <div className="relative">
-              <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="text-2xl font-bold pr-12 h-14" />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-lg">МР</span>
+              <Input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0"
+                className="bg-zinc-900 border-zinc-800 text-white text-2xl font-bold pr-12 h-14 focus:ring-blue-500/20"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-lg font-mono">MR</span>
             </div>
           </div>
-          <div className="flex gap-2">
-            {["100", "500", "1000", "5000"].map((v) => (
-              <Button key={v} variant="secondary" size="sm" onClick={() => setAmount(v)}>{v} МР</Button>
-            ))}
-          </div>
-          <Separator />
-          <Button variant="gradient" className="w-full gap-2" onClick={handleSend} disabled={sending || !amount || !emojiCode}>
-            {sending ? "Отправка..." : `Отправить ${emojiCode}`} <ArrowUpRight className="w-4 h-4" />
+
+          {error && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+
+          <Separator className="bg-zinc-900" />
+
+          <Button
+            className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-50"
+            onClick={handleSend}
+            disabled={sending || !amount || !isValid}
+          >
+            {sending ? "Транзакция..." : `Перевести ${amount || 0} MR`} <ArrowUpRight className="ml-2 w-5 h-5" />
           </Button>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle>Мой emoji-код</CardTitle><CardDescription>Доступно с тарифа Gold и выше</CardDescription></CardHeader>
+      <Card className="bg-zinc-950 border-zinc-800">
+        <CardHeader><CardTitle className="text-white">Мои реквизиты</CardTitle><CardDescription>Коды ваших активных карт</CardDescription></CardHeader>
         <CardContent className="space-y-3">
           {emojiCards.map((card) => (
-            <div key={card.id} className="flex items-center justify-between p-3 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center text-2xl">{card.emojiCode}</div>
+            <div key={card.id} className="flex items-center justify-between p-4 rounded-xl border border-zinc-900 bg-zinc-900/50">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-2xl shadow-xl">{card.emojiCode}</div>
                 <div>
-                  <p className="text-sm font-medium">{card.holder}</p>
-                  <p className="text-xs text-muted-foreground">{tierMeta[card.tier].label} ••{card.number.slice(-4)}</p>
+                  <p className="text-sm font-bold text-zinc-200">{card.holder}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-widest">{tierMeta[card.tier].label} ••{card.number.slice(-4)}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => card.emojiCode && copyCode(card.emojiCode, card.id)}>
+              <Button variant="outline" size="sm" className="bg-zinc-950 border-zinc-800 hover:bg-zinc-900 text-zinc-300" onClick={() => card.emojiCode && copyCode(card.emojiCode, card.id)}>
                 {copiedId === card.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                {copiedId === card.id ? "Скопировано" : "Копировать"}
+                {copiedId === card.id ? "Ок" : "Копи"}
               </Button>
             </div>
           ))}
           {basicCards.length > 0 && (
             <div className="space-y-2">
               {basicCards.map((card) => (
-                <div key={card.id} className="flex items-center justify-between p-3 rounded-lg border opacity-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center"><Lock className="w-5 h-5 text-muted-foreground" /></div>
+                <div key={card.id} className="flex items-center justify-between p-4 rounded-xl border border-zinc-900 bg-zinc-900/20 opacity-40">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center"><Lock className="w-5 h-5 text-zinc-700" /></div>
                     <div>
-                      <p className="text-sm font-medium">{card.holder}</p>
-                      <p className="text-xs text-muted-foreground">{tierMeta[card.tier].label} ••{card.number.slice(-4)}</p>
+                      <p className="text-sm font-bold text-zinc-500">{card.holder}</p>
+                      <p className="text-xs text-zinc-600 uppercase tracking-widest">{tierMeta[card.tier].label} ••{card.number.slice(-4)}</p>
                     </div>
                   </div>
-                  <Badge variant="secondary">Gold+</Badge>
+                  <Badge variant="outline" className="text-[10px] border-zinc-800">Gold+</Badge>
                 </div>
               ))}
             </div>
           )}
-          {cards.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Создайте карту Gold или выше, чтобы получить emoji-код</p>}
         </CardContent>
       </Card>
-
-      {transactions.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle>Последние операции</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {transactions.map((tx, i, arr) => (
-                <div key={tx.id}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {(tx as any).emojiCode && <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-lg">{(tx as any).emojiCode}</div>}
-                      <div><p className="text-sm font-medium">{tx.name}</p><p className="text-xs text-muted-foreground">{tx.category}</p></div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-medium ${tx.amount > 0 ? "text-emerald-500" : ""}`}>{tx.amount > 0 ? "+" : ""}{tx.amount.toLocaleString("ru")} МР</p>
-                      <p className="text-xs text-muted-foreground">{tx.date}</p>
-                    </div>
-                  </div>
-                  {i < arr.length - 1 && <Separator className="mt-4" />}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

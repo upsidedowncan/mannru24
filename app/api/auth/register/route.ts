@@ -1,0 +1,54 @@
+import { NextResponse } from "next/server";
+import { readDb, writeDb } from "@/lib/db";
+import { login } from "@/lib/auth";
+import { v4 as uuidv4 } from "uuid";
+
+export async function POST(request: Request) {
+  try {
+    const { name, password } = await request.json();
+
+    if (!name || !password) {
+      return NextResponse.json({ error: "Name and password are required" }, { status: 400 });
+    }
+
+    const db = readDb();
+    if (db.users.find((u) => u.name === name)) {
+      return NextResponse.json({ error: "User already exists" }, { status: 400 });
+    }
+
+    const passwordHash = await Bun.password.hash(password);
+    const newUser = {
+      id: uuidv4(),
+      name,
+      passwordHash,
+      phone: "",
+      bonusBalance: 1000,
+      totalEarned: 1000,
+      totalSpent: 0,
+      streak: 1,
+      level: 1,
+      xp: 0,
+    };
+
+    db.users.push(newUser);
+
+    // Add default card for new user
+    db.cards.push({
+      id: uuidv4(),
+      userId: newUser.id,
+      tier: "bronze",
+      number: `•••• •••• •••• ${Math.floor(1000 + Math.random() * 9000)}`,
+      holder: name.toUpperCase(),
+      balance: 1000,
+      expiry: "12/29",
+      createdAt: new Date().toISOString(),
+    });
+
+    writeDb(db);
+    await login({ id: newUser.id, name: newUser.name });
+
+    return NextResponse.json({ success: true, user: { id: newUser.id, name: newUser.name } });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { BankCard, tierMeta } from "@/components/BankCard";
 import { CreateCardDialog } from "@/components/CreateCardDialog";
 import { UpgradeCardDialog } from "@/components/UpgradeCardDialog";
@@ -11,8 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Check, CreditCard, Trash2 } from "lucide-react";
+import { Check, CreditCard, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Card as CardType, CardTier } from "@/lib/db";
+import { motion, AnimatePresence } from "framer-motion";
 
 const tierOrder: CardTier[] = ["bronze", "silver", "gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
 
@@ -29,6 +30,88 @@ const tierInfo = [
   { tier: "black" as const, name: "Black", features: ["Всё из Diamond", "Кэшбэк 12% на все покупки", "Персональный менеджер", "VIP доступ в рестораны и клубы", "Безлимитные переводы worldwide"] },
   { tier: "obsidian" as const, name: "Obsidian", features: ["Всё из Black", "Кэшбэк 15% на все покупки", "Максимальные лимиты", "Приглашения на закрытые события", "Полная финансовая свобода"] },
 ];
+
+function TariffCarousel({ onSelect, existingCards }: { onSelect: () => void, existingCards: any[] }) {
+  const [index, setIndex] = useState(0);
+
+  const next = () => setIndex((prev) => (prev + 1) % tierInfo.length);
+  const prev = () => setIndex((prev) => (prev - 1 + tierInfo.length) % tierInfo.length);
+
+  return (
+    <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden perspective-[1200px]">
+      <div className="absolute top-1/2 left-4 z-20 -translate-y-1/2">
+        <Button variant="outline" size="icon" className="rounded-full bg-zinc-900/50 border-zinc-800" onClick={prev}>
+          <ChevronLeft className="w-6 h-6" />
+        </Button>
+      </div>
+      <div className="absolute top-1/2 right-4 z-20 -translate-y-1/2">
+        <Button variant="outline" size="icon" className="rounded-full bg-zinc-900/50 border-zinc-800" onClick={next}>
+          <ChevronRight className="w-6 h-6" />
+        </Button>
+      </div>
+
+      <div className="relative w-full h-full flex items-center justify-center transform-style-3d">
+        {tierInfo.map((tier, i) => {
+          const offset = i - index;
+          // Loop around for infinite feel
+          let normalizedOffset = offset;
+          if (offset > tierInfo.length / 2) normalizedOffset -= tierInfo.length;
+          if (offset < -tierInfo.length / 2) normalizedOffset += tierInfo.length;
+
+          const isActive = normalizedOffset === 0;
+          const absOffset = Math.abs(normalizedOffset);
+
+          // Only show cards within a certain range
+          if (absOffset > 3) return null;
+
+          return (
+            <motion.div
+              key={tier.tier}
+              initial={false}
+              animate={{
+                x: normalizedOffset * 220,
+                scale: 1 - absOffset * 0.15,
+                rotateY: normalizedOffset * -35,
+                z: -absOffset * 150,
+                opacity: 1 - absOffset * 0.2,
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute cursor-pointer"
+              style={{
+                zIndex: 10 - absOffset,
+              }}
+              onClick={() => setIndex(i)}
+            >
+              <div className="relative group">
+                <BankCard
+                  tier={tier.tier}
+                  number="•••• •••• •••• 0000"
+                  holder="MANNRU CLIENT"
+                  balance={0}
+                  expiry="12/30"
+                  emojiCode="🏦🤡💸🔥"
+                />
+                {isActive && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute -bottom-24 left-0 right-0 text-center space-y-2 pointer-events-none"
+                  >
+                    <h3 className="text-xl font-bold text-white uppercase tracking-widest">{tierMeta[tier.tier].label}</h3>
+                    <p className="text-blue-400 text-sm font-mono">{tierMeta[tier.tier].price}</p>
+                    <div className="pt-2 pointer-events-auto">
+                      <CreateCardDialog onCreated={onSelect} existingCards={existingCards} />
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function CardsPage() {
   const [cards, setCards] = useState<CardType[]>([]);
@@ -61,125 +144,116 @@ export default function CardsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Карты</h1>
-          <p className="text-muted-foreground text-sm mt-1">{cards.length} карт</p>
+          <p className="text-muted-foreground text-sm mt-1">{cards.length} активных карт</p>
         </div>
-        <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
       </div>
 
-      {cards.length > 0 ? (
-        <ScrollArea className="w-full pb-2">
-          <div className="flex gap-4 w-max">
-            {cards.map((card) => (
-              <div key={card.id} className="relative group">
-                <BankCard
-                  tier={card.tier}
-                  number={card.number}
-                  holder={card.holder}
-                  balance={card.balance}
-                  expiry={card.expiry}
-                  emojiCode={card.emojiCode}
-                />
-                <div className="absolute top-2 right-2 flex gap-1">
-                  <UpgradeCardDialog card={card} allCards={cardLabels} onUpgraded={fetchCards} />
-                  <button
-                    onClick={() => setDeleteId(card.id)}
-                    className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      ) : (
-        <Card>
-          <CardContent className="pt-6 flex flex-col items-center text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-              <CreditCard className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
-            <p className="text-muted-foreground text-sm mb-4">Создайте свою первую карту и получите 1 000 МР</p>
-            <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">Все тарифы</TabsTrigger>
+      <Tabs defaultValue="tariffs" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-zinc-900">
+          <TabsTrigger value="my">Мои карты</TabsTrigger>
+          <TabsTrigger value="tariffs">Тарифы 3D</TabsTrigger>
           <TabsTrigger value="compare">Сравнение</TabsTrigger>
         </TabsList>
-        <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {tierInfo.map((tier) => {
-              const meta = tierMeta[tier.tier];
-              return (
-                <Card key={tier.tier} className="flex flex-col transition-all hover:shadow-lg hover:shadow-black/20">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg ${meta.gradient} ring-1 ${meta.ring} flex items-center justify-center shadow-[0_1px_0_0_rgba(255,255,255,0.15)_inset,0_2px_4px_0_rgba(0,0,0,0.2)]`}>
-                        <CreditCard className="w-5 h-5 text-white/80" />
-                      </div>
-                      <div>
-                        <CardTitle>{meta.label}</CardTitle>
-                        <CardDescription>{meta.price}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <div className="mb-4 p-3 rounded-lg bg-secondary">
-                      <p className="text-xs text-muted-foreground">Кэшбэк</p>
-                      <p className="text-2xl font-bold">{meta.cashback}</p>
-                    </div>
-                    <ul className="space-y-2">
-                      {tier.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
-                  </CardFooter>
-                </Card>
-              );
-            })}
+
+        <TabsContent value="my" className="mt-6">
+          {cards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {cards.map((card) => (
+                <div key={card.id} className="relative group">
+                  <BankCard
+                    tier={card.tier}
+                    number={card.number}
+                    holder={card.holder}
+                    balance={card.balance}
+                    expiry={card.expiry}
+                    emojiCode={card.emojiCode}
+                  />
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <UpgradeCardDialog card={card} allCards={cardLabels} onUpgraded={fetchCards} />
+                    <button
+                      onClick={() => setDeleteId(card.id)}
+                      className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div className="aspect-[1.586/1] border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center group hover:border-zinc-700 transition-colors cursor-pointer">
+                 <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
+              </div>
+            </div>
+          ) : (
+            <Card className="bg-zinc-950 border-zinc-900">
+              <CardContent className="pt-6 flex flex-col items-center text-center py-12">
+                <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
+                  <CreditCard className="w-8 h-8 text-zinc-500" />
+                </div>
+                <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
+                <p className="text-zinc-500 text-sm mb-4">Выберите подходящий тариф и начните тратить воображаемые деньги.</p>
+                <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="tariffs" className="mt-6 border-none p-0">
+          <TariffCarousel onSelect={fetchCards} existingCards={cardLabels} />
+
+          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
+             {tierInfo.slice(0, 3).map(t => (
+               <div key={t.tier} className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                  <h4 className="font-bold text-white mb-2">{tierMeta[t.tier].label}</h4>
+                  <ul className="space-y-1">
+                    {t.features.map((f, i) => (
+                      <li key={i} className="text-xs text-zinc-500 flex items-center gap-2">
+                        <Check className="w-3 h-3 text-blue-500" /> {f}
+                      </li>
+                    ))}
+                  </ul>
+               </div>
+             ))}
           </div>
         </TabsContent>
+
         <TabsContent value="compare" className="mt-6">
-          <Card>
-            <CardContent className="pt-6">
+          <Card className="bg-zinc-950 border-zinc-900 overflow-hidden">
+            <CardContent className="p-0">
               <ScrollArea className="w-full">
-                <div className="min-w-[600px]">
-                  <table className="w-full text-sm">
+                <div className="min-w-[800px]">
+                  <table className="w-full text-sm border-collapse">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 text-muted-foreground font-medium">Функция</th>
+                      <tr className="border-b border-zinc-800 bg-zinc-900/50">
+                        <th className="text-left py-4 px-6 text-zinc-400 font-medium">Параметр</th>
                         {tierOrder.map((t) => (
-                          <th key={t} className="text-center py-3 px-3">
-                            <div className="flex flex-col items-center gap-1.5">
-                              <div className={`w-6 h-6 rounded-sm ${tierMeta[t].gradient} ring-1 ring-white/10`} />
-                              <span className="text-xs">{tierMeta[t].label}</span>
+                          <th key={t} className="text-center py-4 px-4">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className={`w-8 h-5 rounded ${tierMeta[t].gradient} ring-1 ring-white/10`} />
+                              <span className="text-[10px] font-bold uppercase tracking-tighter text-zinc-300">{tierMeta[t].label}</span>
                             </div>
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody>
-                      {[
-                        { feature: "Цена", values: tierOrder.map((t) => tierMeta[t].price) },
-                        { feature: "Кэшбэк", values: tierOrder.map((t) => tierMeta[t].cashback) },
-                      ].map((row, i) => (
-                        <tr key={i} className="border-b last:border-0">
-                          <td className="py-3 px-4 font-medium">{row.feature}</td>
-                          {row.values.map((v, j) => (
-                            <td key={j} className="text-center py-3 px-3 text-muted-foreground text-xs">{v}</td>
-                          ))}
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-zinc-900">
+                      <tr>
+                        <td className="py-4 px-6 font-medium text-zinc-300 bg-zinc-900/20">Стоимость</td>
+                        {tierOrder.map((t) => (
+                          <td key={t} className="text-center py-4 px-4 text-zinc-500 text-xs">{tierMeta[t].price}</td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="py-4 px-6 font-medium text-zinc-300 bg-zinc-900/20">Кэшбэк</td>
+                        {tierOrder.map((t) => (
+                          <td key={t} className="text-center py-4 px-4 text-zinc-500 text-xs">{tierMeta[t].cashback}</td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="py-4 px-6 font-medium text-zinc-300 bg-zinc-900/20">Обслуживание</td>
+                        {tierOrder.map((t) => (
+                          <td key={t} className="text-center py-4 px-4 text-zinc-500 text-xs">Бесплатно*</td>
+                        ))}
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -190,16 +264,16 @@ export default function CardsPage() {
       </Tabs>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-zinc-950 border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить карту?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Это действие нельзя отменить. Карта будет удалена навсегда.
+            <AlertDialogTitle className="text-white">Удалить карту?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-500">
+              Это действие нельзя отменить. Ваша элитная карта превратится в тыкву.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteCard} className="bg-red-600 hover:bg-red-700">Удалить</AlertDialogAction>
+            <AlertDialogCancel className="bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800">Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteCard} className="bg-red-600 hover:bg-red-700 text-white border-none">Уничтожить</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

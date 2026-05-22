@@ -96,19 +96,28 @@ export function useProgression() {
   return ctx;
 }
 
+import { pageUnlockLevel, tierUnlockLevel } from "./constants";
+
 function getUnlockedPages(level: number): string[] {
   const pages: string[] = [];
-  if (level >= 2) pages.push("История");
-  if (level >= 3) pages.push("Переводы");
-  if (level >= 4) pages.push("Бонусы");
-  if (level >= 5) pages.push("Задания");
+  const map: Record<string, string> = {
+    "/dashboard/history": "История",
+    "/dashboard/transfers": "Переводы",
+    "/dashboard/bonuses": "Бонусы",
+    "/dashboard/tasks": "Задания",
+    "/dashboard/investments": "Инвестиции",
+  };
+
+  for (const [path, lvl] of Object.entries(pageUnlockLevel)) {
+    if (lvl === level && map[path]) pages.push(map[path]);
+  }
   return pages;
 }
 
 function getUnlockedTiers(level: number): string[] {
-  const tiers: Record<number, string> = {
-    1: "Bronze", 2: "Silver", 3: "Gold", 4: "Platinum", 5: "Titanium",
-    6: "Ruby", 7: "Emerald", 8: "Sapphire", 9: "Diamond", 10: "Black", 11: "Obsidian",
-  };
-  return level >= 1 ? [tiers[level]] : [];
+  const tiers: string[] = [];
+  for (const [tier, lvl] of Object.entries(tierUnlockLevel)) {
+    if (lvl === level) tiers.push(tier.charAt(0).toUpperCase() + tier.slice(1));
+  }
+  return tiers;
 }
