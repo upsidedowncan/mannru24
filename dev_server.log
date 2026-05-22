@@ -1,0 +1,80 @@
+
+> mannru@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 603ms
+- Experiments (use with caution):
+  ✓ webpackMemoryOptimizations
+
+○ Compiling /login ...
+ GET /login 200 in 12.4s (next.js: 11.8s, application-code: 596ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+      <SegmentViewNode type="page" pagePath="login/page...">
+        <SegmentTrieNode>
+        <ClientPageRoot Component={function LoginPage} serverProvidedParams={{...}}>
+          <LoginPage params={Promise} searchParams={Promise}>
+            <div className="min-h-scre...">
+              <div className="flex items...">
+                <Card className="w-full max...">
+                  <div className="rounded-xl...">
+                    <CardHeader>
+                    <CardContent>
+                      <div className="p-6 pt-0">
+                        <form onSubmit={function handlePhoneSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>
+                            <Input id="phone" type="text" value="" onChange={function onChange} placeholder="Александр" ...>
+                              <input
+                                type="text"
+                                className="flex h-10 w-full rounded-lg border border-input bg-transparent px-3 py-2 te..."
+                                id="phone"
+                                value=""
+                                onChange={function onChange}
+                                placeholder="Александр"
+                                autoFocus={true}
+-                               style={{caret-color:"transparent"}}
+                              >
+                          ...
+                    ...
+              ...
+      ...
+
+ GET /api/user 401 in 1732ms (next.js: 1693ms, application-code: 39ms)
+ POST /api/auth/login 404 in 617ms (next.js: 593ms, application-code: 24ms)
+ POST /api/auth/register 500 in 280ms (next.js: 259ms, application-code: 21ms)
+ GET /api/user 401 in 11ms (next.js: 4ms, application-code: 7ms)
+ GET /api/user 401 in 9ms (next.js: 3ms, application-code: 6ms)
+ GET /api/user 401 in 14ms (next.js: 4ms, application-code: 11ms)
+ GET /login 200 in 108ms (next.js: 6ms, application-code: 101ms)
+ GET /api/user 401 in 13ms (next.js: 5ms, application-code: 8ms)
+ POST /api/auth/login 404 in 14ms (next.js: 5ms, application-code: 9ms)
+Registration error: ReferenceError: Bun is not defined
+    at POST (app/api/auth/register/route.ts:19:26)
+  17 |     }
+  18 |
+> 19 |     const passwordHash = await Bun.password.hash(password);
+     |                          ^
+  20 |     const newUser = {
+  21 |       id: uuidv4(),
+  22 |       name,
+ POST /api/auth/register 500 in 311ms (next.js: 4ms, application-code: 307ms)
+ GET /api/user 401 in 8ms (next.js: 3ms, application-code: 6ms)
+ GET /api/user 401 in 8ms (next.js: 3ms, application-code: 5ms)
+ GET /api/user 401 in 10ms (next.js: 3ms, application-code: 7ms)
+[?25h

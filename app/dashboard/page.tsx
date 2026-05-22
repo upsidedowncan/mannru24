@@ -11,6 +11,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/comp
 import { ArrowUpRight, ArrowDownLeft, Percent, TrendingUp, Wallet, Send, QrCode, Plus, ChevronRight, CreditCard, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Card as CardType, Transaction, UserProfile } from "@/lib/db";
 
 export default function DashboardPage() {
@@ -18,18 +19,35 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const fetchData = async () => {
     setLoading(true);
-    const [cardsRes, txRes, userRes] = await Promise.all([
-      fetch("/api/cards"),
-      fetch("/api/transactions?limit=5"),
-      fetch("/api/user"),
-    ]);
-    setCards(await cardsRes.json());
-    setTransactions(await txRes.json());
-    setUser(await userRes.json());
-    setLoading(false);
+    try {
+      const [cardsRes, txRes, userRes] = await Promise.all([
+        fetch("/api/cards"),
+        fetch("/api/transactions?limit=5"),
+        fetch("/api/user"),
+      ]);
+
+      if (cardsRes.status === 401 || txRes.status === 401 || userRes.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      const cardsData = await cardsRes.json();
+      const txData = await txRes.json();
+      const userData = await userRes.json();
+
+      setCards(Array.isArray(cardsData) ? cardsData : []);
+      setTransactions(Array.isArray(txData) ? txData : []);
+      setUser(userData && !userData.error ? userData : null);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      toast.error("Ошибка загрузки данных");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchData(); }, []);

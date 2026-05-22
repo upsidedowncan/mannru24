@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const user = db.users.find((u) => u.name === name);
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ error: "User not found", code: "USER_NOT_FOUND" }, { status: 404 });
     }
 
     const isMatch = await Bun.password.verify(password, user.passwordHash);

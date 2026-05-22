@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Target, Zap, Gift, Trophy, Clock, CheckCircle2, Sparkles } from "lucide-react";
 import { withAccess } from "@/components/AccessGuard";
 import type { Task } from "@/lib/db";
+import { useRouter } from "next/navigation";
 
 const iconMap: Record<string, typeof Target> = { Target, Zap, Gift, Trophy, Clock };
 
@@ -16,12 +17,23 @@ function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const router = useRouter();
 
   const fetchTasks = async () => {
     setLoading(true);
-    const res = await fetch("/api/tasks");
-    setTasks(await res.json());
-    setLoading(false);
+    try {
+      const res = await fetch("/api/tasks");
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      const data = await res.json();
+      setTasks(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchTasks(); }, []);

@@ -12,6 +12,7 @@ import { withAccess } from "@/components/AccessGuard";
 import type { Transaction, Card as CardType } from "@/lib/db";
 import { tierMeta } from "@/components/BankCard";
 import { useProgression } from "@/lib/progression";
+import { useRouter } from "next/navigation";
 
 const quickEmojis = ["🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁"];
 
@@ -25,11 +26,28 @@ function TransfersPage() {
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { triggerLevelUps } = useProgression();
+  const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/cards").then((r) => r.json()).then(setCards);
-    fetch("/api/transactions?limit=10").then((r) => r.json()).then(setTransactions);
-  }, []);
+    const fetchData = async () => {
+      const [cardsRes, txRes] = await Promise.all([
+        fetch("/api/cards"),
+        fetch("/api/transactions?limit=10")
+      ]);
+
+      if (cardsRes.status === 401 || txRes.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      const cardsData = await cardsRes.json();
+      const txData = await txRes.json();
+
+      setCards(Array.isArray(cardsData) ? cardsData : []);
+      setTransactions(Array.isArray(txData) ? txData : []);
+    };
+    fetchData();
+  }, [router]);
 
   // Validation: Address consists strictly of 4 emojis
   // We use a simple length check and emoji splitting for the UI
