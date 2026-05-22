@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Shader, FilmGrain, Swirl, ChromaFlow } from "shaders/react";
 import { WebGLGuard, HeroShaderFallback } from "@/components/hero-shader";
 import { ArrowRight, Shield, Zap, Gift, CreditCard, Smartphone, Percent, Check, ChevronRight, Menu, X } from "lucide-react";
+
+const DynamicShader = dynamic(() => import("@/components/dynamic-shader"), { ssr: false });
 
 export default function LandingPage() {
   const [isMobile, setIsMobile] = useState(false);
@@ -129,11 +131,7 @@ export default function LandingPage() {
         <WebGLGuard
           fallback={<HeroShaderFallback />}
         >
-          <Shader className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.5 }}>
-            <Swirl colorA="#241e04" colorB="#f54a00" colorSpace="lch" detail={1.4} blend={46} speed={0.8} />
-            <ChromaFlow baseColor="#0066ff" upColor="#00ff00" downColor="#ff0000" leftColor="#0000ff" rightColor="#ffff00" intensity={1} radius={3} momentum={30} opacity={0.4} />
-            <FilmGrain opacity={0.03} />
-          </Shader>
+          <DynamicShader />
         </WebGLGuard>
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="max-w-2xl">
