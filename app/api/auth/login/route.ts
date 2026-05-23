@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDb } from "@/lib/db";
 import { login } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found", code: "USER_NOT_FOUND" }, { status: 404 });
     }
 
-    const isMatch = await Bun.password.verify(password, user.passwordHash);
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }

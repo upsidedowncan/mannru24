@@ -36,6 +36,18 @@
       "streak": 1,
       "level": 1,
       "xp": 0
+    },
+    {
+      "id": "e90ba1ed-5a98-4dd9-9f34-ab70b8dea7aa",
+      "name": "BcryptUser1779518216",
+      "passwordHash": "$2b$10$aJdboIP1QOCDhS9fzflhFuIBppNL4ZDdVWGkAz5y8IMw2PNWDFjSS",
+      "phone": "",
+      "bonusBalance": 1000,
+      "totalEarned": 1000,
+      "totalSpent": 0,
+      "streak": 1,
+      "level": 1,
+      "xp": 0
     }
   ],
   "cards": [
@@ -69,6 +81,16 @@
       "balance": 1000,
       "expiry": "12/29",
       "createdAt": "2026-05-22T20:56:19.191Z"
+    },
+    {
+      "id": "85ac787b-b720-4e41-ac12-750f70054b64",
+      "userId": "e90ba1ed-5a98-4dd9-9f34-ab70b8dea7aa",
+      "tier": "bronze",
+      "number": "•••• •••• •••• 1271",
+      "holder": "BCRYPTUSER1779518216",
+      "balance": 1000,
+      "expiry": "12/29",
+      "createdAt": "2026-05-23T06:36:57.147Z"
     }
   ],
   "transactions": [],

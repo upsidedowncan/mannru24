@@ -55,3 +55,76 @@
  GET /api/cards 200 in 10ms (next.js: 3ms, application-code: 7ms)
  GET /api/cards 200 in 25ms (next.js: 11ms, application-code: 14ms)
  GET /api/user 200 in 19ms (next.js: 4ms, application-code: 16ms)
+ GET /login 200 in 1708ms (next.js: 500ms, application-code: 1208ms)
+ GET /api/user 401 in 296ms (next.js: 211ms, application-code: 85ms)
+ POST /api/auth/login 404 in 314ms (next.js: 279ms, application-code: 36ms)
+ POST /api/auth/register 200 in 270ms (next.js: 82ms, application-code: 188ms)
+ GET /dashboard 200 in 155ms (next.js: 19ms, application-code: 137ms)
+ GET /api/auth/me 200 in 173ms (next.js: 39ms, application-code: 135ms)
+⨯ Error: failed to pipe response
+    at processTicksAndRejections (unknown:7:39) {
+  [cause]: Error: Stream is already ended
+      at <anonymous> (unknown:1:11)
+      at <anonymous> (unknown:1:11)
+      at <anonymous> (unknown:1:11)
+      at <anonymous> (unknown:1:11)
+      at <anonymous> (unknown:1:11)
+      at <anonymous> (unknown:1:11)
+      at <anonymous> (unknown:7:62)
+      at processTicksAndRejections (unknown:7:39) {
+    code: 'ERR_STREAM_ALREADY_FINISHED',
+    toString: [Function: toString]
+  }
+}
+⨯ Error: failed to pipe response
+    at processTicksAndRejections (null) {
+  [cause]: Error: Stream is already ended
+      at writeHead (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at processTicksAndRejections (null) {
+    code: 'ERR_STREAM_ALREADY_FINISHED',
+    toString: [Function: toString]
+  }
+}
+⨯ Error: failed to pipe response
+    at processTicksAndRejections (null) {
+  [cause]: Error: Stream is already ended
+      at writeHead (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at processTicksAndRejections (null) {
+    code: 'ERR_STREAM_ALREADY_FINISHED',
+    toString: [Function: toString]
+  }
+}
+⨯ Error: failed to pipe response
+    at processTicksAndRejections (null) {
+  [cause]: Error: Stream is already ended
+      at writeHead (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at <anonymous> (null)
+      at processTicksAndRejections (null) {
+    code: 'ERR_STREAM_ALREADY_FINISHED',
+    toString: [Function: toString]
+  }
+}
+ GET /login 200 in 2.1s (next.js: 5ms, application-code: 2.1s)
+ GET /api/user 200 in 12ms (next.js: 3ms, application-code: 9ms)
+ POST /api/auth/login 200 in 130ms (next.js: 7ms, application-code: 123ms)
+ GET /dashboard 200 in 245ms (next.js: 3ms, application-code: 242ms)
