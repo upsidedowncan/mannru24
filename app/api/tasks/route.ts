@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDb, writeDb, Task } from "@/lib/db";
+import { readDb, writeDb, Task, logClick } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 export async function GET() {
@@ -7,6 +7,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = readDb();
+  logClick(db, session.user.id, "Просмотр списка заданий");
   let tasks = db.tasks.filter(t => t.userId === session.user.id);
 
   if (tasks.length === 0) {
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
     completed: false,
   };
   db.tasks.push(task);
+  logClick(db, session.user.id, `Создание задания: ${body.title}`);
   writeDb(db);
   return NextResponse.json(task, { status: 201 });
 }
@@ -68,6 +70,7 @@ export async function PATCH(req: Request) {
 
   // If task just completed, reward user with real MR on their first card
   if (!alreadyCompleted && db.tasks[idx].completed) {
+    logClick(db, session.user.id, `Задание выполнено: ${db.tasks[idx].title}`);
     const userCards = db.cards.filter(c => c.userId === session.user.id);
     if (userCards.length > 0) {
       const rewardMr = Math.floor(db.tasks[idx].rewardPoints / 2); // 2 points = 1 MR for tasks
