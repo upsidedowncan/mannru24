@@ -88,42 +88,43 @@ function getDefaultDb(): Database {
 }
 
 export function calculateLevel(xp: number): { level: number; currentXp: number; nextXp: number } {
-  // Formula: XP = Level * 100 for NEXT level.
-  // Level 1: 0-99 XP
-  // Level 2: 100-299 XP (2 * 100 = 200 needed for level 3)
-  // Wait, let's use a simpler one: Level = floor(sqrt(xp/100)) + 1 ?
-  // User asked for: XP = Level * 100 for each next level.
-  // Lvl 1 -> 2: 100 XP
-  // Lvl 2 -> 3: 200 XP
-  // Lvl 3 -> 4: 300 XP
-  // Total XP for Level N: sum_{i=1}^{N-1} (i * 100) = 100 * (N-1)*N / 2
-
+  // Required XP for next level increases by 1.5x, starting from 5 XP for Lvl 2
   let level = 1;
-  while (true) {
-    const xpForNext = level * 100;
-    const totalXpForNext = (level * (level + 1) / 2) * 100;
-    if (xp < totalXpForNext) break;
+  let currentTotal = 0;
+  let requiredForNext = 5;
+
+  while (xp >= currentTotal + requiredForNext) {
+    currentTotal += requiredForNext;
     level++;
+    requiredForNext = Math.round(requiredForNext * 1.5);
   }
 
-  const totalXpForCurrent = ((level - 1) * level / 2) * 100;
-  const currentXp = xp - totalXpForCurrent;
-  const nextXp = level * 100;
-
-  return { level, currentXp, nextXp };
+  return {
+    level,
+    currentXp: xp - currentTotal,
+    nextXp: requiredForNext,
+  };
 }
 
 export function addXp(db: Database, userId: string, amount: number): number[] {
-  const user = db.users.find(u => u.id === userId);
+  const user = db.users.find((u) => u.id === userId);
   if (!user) return [];
 
   const oldLevel = user.level;
   user.xp += amount;
   const { level } = calculateLevel(user.xp);
-  user.level = level;
 
   if (level > oldLevel) {
-    return Array.from({ length: level - oldLevel }, (_, i) => oldLevel + i + 1);
+    const levelUps: number[] = [];
+    for (let l = oldLevel + 1; l <= level; l++) {
+      levelUps.push(l);
+      // Reward: Level * 50 bonus MR
+      const reward = l * 50;
+      user.bonusBalance += reward;
+      user.totalEarned += reward;
+    }
+    user.level = level;
+    return levelUps;
   }
   return [];
 }
