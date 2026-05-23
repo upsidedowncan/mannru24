@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
 import { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel } from "./constants";
 

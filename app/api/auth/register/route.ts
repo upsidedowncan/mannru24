@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readDb, writeDb } from "@/lib/db";
 import { login } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User already exists" }, { status: 400 });
     }
 
-    const passwordHash = await Bun.password.hash(password);
+    const passwordHash = await bcrypt.hash(password, 10);
     const newUser = {
       id: uuidv4(),
       name,
