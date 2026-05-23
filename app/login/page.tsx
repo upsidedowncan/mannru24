@@ -52,7 +52,7 @@ export default function LoginPage() {
         const regRes = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: phone, password }),
+          body: JSON.stringify({ name: phone, password, phone }),
         });
 
         if (regRes.ok) {

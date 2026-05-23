@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { name, password } = await request.json();
+    const { name, password, phone } = await request.json();
 
     if (!name || !password) {
       return NextResponse.json({ error: "Name and password are required" }, { status: 400 });
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       id: uuidv4(),
       name,
       passwordHash,
-      phone: "",
+      phone: phone || "",
       bonusBalance: 1000,
       totalEarned: 1000,
       totalSpent: 0,

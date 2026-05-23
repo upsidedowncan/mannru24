@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileNavbar } from "@/components/MobileNavbar";
 import { NewbieGuide } from "@/components/NewbieGuide";
 import { LevelUpDialog } from "@/components/LevelUpDialog";
+import { DevPanel } from "@/components/DevPanel";
 
 export default function DashboardLayout({
   children,
@@ -49,6 +50,7 @@ export default function DashboardLayout({
       <MobileNavbar />
       <NewbieGuide />
       <LevelUpDialog />
+      <DevPanel />
     </div>
   );
 }
