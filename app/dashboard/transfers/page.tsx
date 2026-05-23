@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, Smile, Copy, Check, Lock, AlertCircle, Trash2 } from "lucide-react";
+import { ArrowUpRight, Smile, Copy, Check, Lock, AlertCircle, Trash2, Plus } from "lucide-react";
 import { withAccess } from "@/components/AccessGuard";
+import { CreateCardDialog } from "@/components/CreateCardDialog";
 import type { Transaction, Card as CardType } from "@/lib/db";
 import { tierMeta } from "@/components/BankCard";
 import { useProgression } from "@/lib/progression";
@@ -105,7 +106,13 @@ function TransfersPage() {
 
   return (
     <div className="space-y-6">
-      <div><h1 className="text-2xl font-semibold tracking-tight text-white">Переводы</h1><p className="text-muted-foreground text-sm mt-1">Мгновенные переводы по секретному emoji-коду</p></div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Переводы</h1>
+          <p className="text-muted-foreground text-sm mt-1">Мгновенные переводы по секретному emoji-коду</p>
+        </div>
+        <CreateCardDialog onCreated={() => fetch("/api/cards").then(r => r.json()).then(setCards)} existingCards={cards.map(c => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${tierMeta[c.tier].label} ••${c.number.slice(-4)}` }))} />
+      </div>
 
       {completedTasks.length > 0 && (
         <Card className="border-emerald-500/50 bg-emerald-500/5">

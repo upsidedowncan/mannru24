@@ -48,6 +48,18 @@
       "streak": 1,
       "level": 1,
       "xp": 0
+    },
+    {
+      "id": "a4065ba4-2ffa-406a-8e5b-5bd6cc7a975f",
+      "name": "PersistenceTest1779526222909",
+      "passwordHash": "hash",
+      "phone": "",
+      "bonusBalance": 0,
+      "totalEarned": 0,
+      "totalSpent": 0,
+      "streak": 0,
+      "level": 1,
+      "xp": 0
     }
   ],
   "cards": [
