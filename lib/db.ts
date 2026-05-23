@@ -1,11 +1,12 @@
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { readFile, writeFile } from "fs/promises";
-import { join } from "path";
+import { join, dirname } from "path";
 import { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel } from "./constants";
 
 export { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel };
 
-const DB_PATH = join(process.cwd(), "data", "db.json");
+// On Amvera, /data is the persistent mount point.
+const DB_PATH = process.env.NODE_ENV === "production" ? "/data/db.json" : join(process.cwd(), "data", "db.json");
 
 export type CardTier = "bronze" | "silver" | "gold" | "platinum" | "titanium" | "ruby" | "emerald" | "sapphire" | "diamond" | "black" | "obsidian";
 
@@ -155,5 +156,26 @@ export function readDb(): Database {
 }
 
 export function writeDb(db: Database): void {
-  writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+  try {
+    const dir = dirname(DB_PATH);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+    console.log(`DB successfully written to ${DB_PATH}`);
+  } catch (error) {
+    console.error(`CRITICAL: Failed to write DB to ${DB_PATH}`, error);
+    // Fallback to local path if production path fails
+    if (process.env.NODE_ENV === "production" && DB_PATH !== join(process.cwd(), "data", "db.json")) {
+      const fallback = join(process.cwd(), "data", "db.json");
+      try {
+        const fallbackDir = dirname(fallback);
+        if (!existsSync(fallbackDir)) mkdirSync(fallbackDir, { recursive: true });
+        writeFileSync(fallback, JSON.stringify(db, null, 2));
+        console.log(`Fallback write to ${fallback} successful`);
+      } catch (e) {
+        console.error(`Fallback write also failed`, e);
+      }
+    }
+  }
 }
