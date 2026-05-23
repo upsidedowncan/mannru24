@@ -174,7 +174,8 @@ function TransfersPage() {
           <Separator className="bg-zinc-900" />
 
           <Button
-            className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-50"
+            variant="gradient"
+            className="w-full h-14 text-lg font-bold transition-all disabled:opacity-50 shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
             onClick={handleSend}
             disabled={sending || !amount || !isValid}
           >

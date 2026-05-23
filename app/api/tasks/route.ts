@@ -62,7 +62,29 @@ export async function PATCH(req: Request) {
   const body = await req.json();
   const idx = db.tasks.findIndex((t: any) => t.id === body.id && t.userId === session.user.id);
   if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const alreadyCompleted = db.tasks[idx].completed;
   db.tasks[idx] = { ...db.tasks[idx], ...body };
+
+  // If task just completed, reward user with real MR on their first card
+  if (!alreadyCompleted && db.tasks[idx].completed) {
+    const userCards = db.cards.filter(c => c.userId === session.user.id);
+    if (userCards.length > 0) {
+      const rewardMr = Math.floor(db.tasks[idx].rewardPoints / 2); // 2 points = 1 MR for tasks
+      userCards[0].balance += rewardMr;
+
+      db.transactions.push({
+        id: crypto.randomUUID(),
+        userId: session.user.id,
+        cardId: userCards[0].id,
+        name: `Награда: ${db.tasks[idx].title}`,
+        category: "Задания",
+        amount: rewardMr,
+        date: new Date().toLocaleDateString("ru-RU"),
+      });
+    }
+  }
+
   writeDb(db);
   return NextResponse.json(db.tasks[idx]);
 }

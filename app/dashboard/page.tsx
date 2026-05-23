@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ArrowUpRight, ArrowDownLeft, Percent, TrendingUp, Wallet, Send, QrCode, Plus, ChevronRight, CreditCard, Lock, AlertCircle } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Percent, TrendingUp, Wallet, Send, QrCode, Plus, ChevronRight, CreditCard, Lock, AlertCircle, Gift } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -52,7 +52,35 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const [dailyClaiming, setDailyClaiming] = useState(false);
   const totalBalance = cards.reduce((sum, c) => sum + c.balance, 0);
+
+  const claimDaily = async () => {
+    if (dailyClaiming || cards.length === 0) return;
+    setDailyClaiming(true);
+    try {
+      // Satirical daily reward: random small amount
+      const amount = Math.floor(Math.random() * 50) + 10;
+      const res = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Ежедневная подачка",
+          category: "Бонусы",
+          amount,
+          cardId: cards[0].id
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Вы получили ${amount} MR!`, {
+          description: "Не потратьте всё сразу (хотя нам всё равно).",
+        });
+        fetchData();
+      }
+    } finally {
+      setDailyClaiming(false);
+    }
+  };
   const totalIncome = transactions.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const totalExpense = Math.abs(transactions.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0));
 
@@ -111,7 +139,21 @@ export default function DashboardPage() {
         )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
+          <Card
+            className="cursor-pointer hover:border-blue-500/50 transition-colors group relative overflow-hidden"
+            onClick={claimDaily}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-blue-400">Ежедневная награда</CardTitle>
+              <Gift className={`w-4 h-4 text-blue-500 ${dailyClaiming ? "animate-bounce" : ""}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">Получить</div>
+              <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-tighter">Нажми, если не гордый</p>
+            </CardContent>
+          </Card>
+          {stats.slice(0, 3).map((stat) => (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
