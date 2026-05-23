@@ -57,6 +57,11 @@ export interface Bonus {
   activated: boolean;
 }
 
+export interface ClickRecord {
+  timestamp: string;
+  action: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -68,6 +73,7 @@ export interface UserProfile {
   streak: number;
   level: number;
   xp: number;
+  clickHistory: ClickRecord[];
 }
 
 interface Database {
@@ -105,6 +111,18 @@ export function calculateLevel(xp: number): { level: number; currentXp: number; 
     currentXp: xp - currentTotal,
     nextXp: requiredForNext,
   };
+}
+
+export function logClick(db: Database, userId: string, action: string): void {
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return;
+  if (!user.clickHistory) user.clickHistory = [];
+  user.clickHistory.push({
+    timestamp: new Date().toISOString(),
+    action,
+  });
+  // Keep history reasonable
+  if (user.clickHistory.length > 100) user.clickHistory.shift();
 }
 
 export function addXp(db: Database, userId: string, amount: number): number[] {

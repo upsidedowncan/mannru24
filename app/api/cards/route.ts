@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDb, writeDb, Card, CardTier, addXp, calculateLevel } from "@/lib/db";
+import { readDb, writeDb, Card, CardTier, addXp, calculateLevel, logClick } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 const emojiTiers: CardTier[] = ["gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
@@ -24,6 +24,8 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = readDb();
+  logClick(db, session.user.id, "Просмотр списка карт");
+  writeDb(db);
   return NextResponse.json(db.cards.filter(c => c.userId === session.user.id));
 }
 
@@ -55,6 +57,7 @@ export async function POST(req: NextRequest) {
   }
 
   db.cards.push(newCard);
+  logClick(db, session.user.id, `Создание карты тарифа ${tier}`);
   const levelUps = addXp(db, session.user.id, 5);
   writeDb(db);
 

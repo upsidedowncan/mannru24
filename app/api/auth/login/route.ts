@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDb } from "@/lib/db";
+import { readDb, writeDb, logClick } from "@/lib/db";
 import { login } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     }
 
     await login({ id: user.id, name: user.name });
+    logClick(db, user.id, "Вход в систему");
+    writeDb(db);
 
     return NextResponse.json({ success: true, user: { id: user.id, name: user.name } });
   } catch (error) {

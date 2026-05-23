@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       streak: 1,
       level: 1,
       xp: 0,
+      clickHistory: [],
     };
 
     db.users.push(newUser);

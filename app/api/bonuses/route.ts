@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDb, writeDb, Bonus } from "@/lib/db";
+import { readDb, writeDb, Bonus, logClick } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 export async function GET() {
@@ -7,6 +7,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = readDb();
+  logClick(db, session.user.id, "Просмотр списка бонусов");
   let bonuses = db.bonuses.filter(b => b.userId === session.user.id);
 
   if (bonuses.length === 0) {
@@ -59,6 +60,7 @@ export async function PATCH(req: NextRequest) {
   if (userIdx === -1) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   if (body.activated && !db.bonuses[idx].activated) {
+    logClick(db, session.user.id, `Активация бонуса: ${db.bonuses[idx].title}`);
     db.users[userIdx].bonusBalance -= db.bonuses[idx].points;
   }
   db.bonuses[idx] = { ...db.bonuses[idx], ...body };

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDb, writeDb, calculateLevel } from "@/lib/db";
+import { readDb, writeDb, calculateLevel, logClick } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 export async function GET() {
@@ -11,6 +11,8 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const { level, currentXp, nextXp } = calculateLevel(user.xp);
+  logClick(db, session.user.id, "Просмотр профиля");
+  writeDb(db);
   return NextResponse.json({ ...user, currentXp, nextXp });
 }
 
@@ -39,6 +41,7 @@ export async function PATCH(req: Request) {
   }
 
   db.users[userIdx] = { ...db.users[userIdx], ...body };
+  logClick(db, session.user.id, "Обновление профиля");
   writeDb(db);
   const { level, currentXp, nextXp } = calculateLevel(db.users[userIdx].xp);
   return NextResponse.json({ ...db.users[userIdx], currentXp, nextXp });

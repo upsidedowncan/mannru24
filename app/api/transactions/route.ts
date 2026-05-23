@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readDb, writeDb, Transaction, addXp, calculateLevel } from "@/lib/db";
+import { readDb, writeDb, Transaction, addXp, calculateLevel, logClick } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 function updateTasksForTransaction(db: any, userId: string, tx: any) {
@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
   };
 
   db.transactions.unshift(tx);
+  logClick(db, session.user.id, `Транзакция: ${body.name} (${body.amount} MR)`);
   if (body.cardId) {
     const card = db.cards.find((c: any) => c.id === body.cardId && c.userId === session.user.id);
     if (card) card.balance += body.amount;
