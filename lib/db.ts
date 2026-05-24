@@ -180,6 +180,7 @@ export function readDb(): Database {
         tasks: data.tasks.map((t: any) => ({ ...t, userId: "legacy-user" })),
         bonuses: data.bonuses.map((b: any) => ({ ...b, userId: "legacy-user" })),
         allowedOAuthDomains: [],
+        oauthApps: [],
       };
     }
     if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
