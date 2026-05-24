@@ -5,11 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Terminal, Plus, Zap, Star, Wallet, X } from "lucide-react";
+import { Terminal, Zap, Star, X, Trash2, Plus, AppWindow } from "lucide-react";
 import { toast } from "sonner";
 import { useProgression } from "@/lib/progression";
 
 const DEV_PHONE = "+79268911629";
+
+interface OAuthApp {
+  id: string;
+  name: string;
+  url: string;
+  icon: string;
+  scopes: string[];
+  createdAt: string;
+}
 
 export function DevPanel() {
   const [show, setShow] = useState(false);
@@ -20,6 +29,13 @@ export function DevPanel() {
   const [cards, setCards] = useState<any[]>([]);
   const { refresh } = useProgression();
 
+  const [apps, setApps] = useState<OAuthApp[]>([]);
+  const [appName, setAppName] = useState("");
+  const [appUrl, setAppUrl] = useState("");
+  const [appIcon, setAppIcon] = useState("");
+  const [scopeInput, setScopeInput] = useState("");
+  const [scopes, setScopes] = useState<string[]>([]);
+
   useEffect(() => {
     const check = async () => {
       const res = await fetch("/api/user");
@@ -28,10 +44,19 @@ export function DevPanel() {
         setUserPhone(data.phone);
         const cRes = await fetch("/api/cards");
         setCards(await cRes.json());
+        loadApps();
       }
     };
     check();
   }, []);
+
+  const loadApps = async () => {
+    const res = await fetch("/api/dev/oauth-apps");
+    if (res.ok) {
+      const data = await res.json();
+      setApps(data.apps ?? []);
+    }
+  };
 
   if (userPhone !== DEV_PHONE) return null;
 
@@ -47,6 +72,55 @@ export function DevPanel() {
     }
   };
 
+  const addScope = () => {
+    const s = scopeInput.trim();
+    if (!s) return;
+    if (scopes.includes(s)) {
+      setScopeInput("");
+      return;
+    }
+    setScopes([...scopes, s]);
+    setScopeInput("");
+  };
+
+  const removeScope = (s: string) => setScopes(scopes.filter(x => x !== s));
+
+  const createApp = async () => {
+    if (!appName.trim() || !appUrl.trim()) {
+      toast.error("Name and URL required");
+      return;
+    }
+    const res = await fetch("/api/dev/oauth-apps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: appName, url: appUrl, icon: appIcon, scopes }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setApps(data.apps ?? []);
+      setAppName("");
+      setAppUrl("");
+      setAppIcon("");
+      setScopes([]);
+      toast.success("OAuth app created");
+    } else {
+      toast.error("Failed to create app");
+    }
+  };
+
+  const deleteApp = async (id: string) => {
+    const res = await fetch("/api/dev/oauth-apps", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setApps(data.apps ?? []);
+      toast.success("App deleted");
+    }
+  };
+
   return (
     <>
       <button
@@ -57,8 +131,8 @@ export function DevPanel() {
       </button>
 
       {show && (
-        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md bg-zinc-950 border-zinc-800 shadow-2xl relative">
+        <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <Card className="w-full max-w-md bg-zinc-950 border-zinc-800 shadow-2xl relative my-8">
             <button onClick={() => setShow(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
               <X className="w-5 h-5" />
             </button>
@@ -97,6 +171,93 @@ export function DevPanel() {
                     <Button onClick={() => handleAction("money", moneyAdd, c.id)} size="sm" variant="gradient" className="h-7 px-2 text-[10px]">Add</Button>
                   </div>
                 ))}
+              </div>
+
+              <div className="space-y-3 border-t border-zinc-800 pt-4">
+                <Label className="text-[10px] uppercase text-zinc-500 flex items-center gap-1.5">
+                  <AppWindow className="w-3 h-3" /> OAuth Apps
+                </Label>
+
+                <div className="space-y-2 bg-zinc-900 p-3 rounded-lg border border-zinc-800">
+                  <Input
+                    placeholder="App name"
+                    value={appName}
+                    onChange={e => setAppName(e.target.value)}
+                    className="bg-zinc-950 border-zinc-800 h-8 text-xs"
+                  />
+                  <Input
+                    placeholder="App URL (https://...)"
+                    value={appUrl}
+                    onChange={e => setAppUrl(e.target.value)}
+                    className="bg-zinc-950 border-zinc-800 h-8 text-xs"
+                  />
+                  <Input
+                    placeholder="Icon URL"
+                    value={appIcon}
+                    onChange={e => setAppIcon(e.target.value)}
+                    className="bg-zinc-950 border-zinc-800 h-8 text-xs"
+                  />
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add scope (e.g. read profile)"
+                      value={scopeInput}
+                      onChange={e => setScopeInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addScope();
+                        }
+                      }}
+                      className="bg-zinc-950 border-zinc-800 h-8 text-xs"
+                    />
+                    <Button onClick={addScope} size="sm" variant="outline" className="h-8 w-8 p-0">
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+
+                  {scopes.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {scopes.map(s => (
+                        <span key={s} className="inline-flex items-center gap-1 bg-zinc-800 text-zinc-200 text-[10px] px-2 py-0.5 rounded-full">
+                          {s}
+                          <button onClick={() => removeScope(s)} className="text-zinc-500 hover:text-red-400">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button onClick={createApp} size="sm" variant="gradient" className="w-full h-8 text-xs">
+                    Create App
+                  </Button>
+                </div>
+
+                <div className="space-y-1.5">
+                  {apps.length === 0 && (
+                    <p className="text-[10px] text-zinc-600 text-center">No apps yet</p>
+                  )}
+                  {apps.map(a => (
+                    <div key={a.id} className="flex items-center gap-2 bg-zinc-900 p-2 rounded-lg border border-zinc-800">
+                      {a.icon ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.icon} alt={a.name} className="w-6 h-6 rounded object-cover bg-zinc-800" />
+                      ) : (
+                        <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-500">
+                          {a.name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold text-zinc-200 truncate">{a.name}</p>
+                        <p className="text-[9px] text-zinc-500 font-mono truncate">{a.id}</p>
+                      </div>
+                      <button onClick={() => deleteApp(a.id)} className="text-zinc-500 hover:text-red-400">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <p className="text-[9px] text-zinc-600 font-mono text-center">
