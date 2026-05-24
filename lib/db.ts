@@ -76,6 +76,16 @@ export interface UserProfile {
   clickHistory: ClickRecord[];
 }
 
+export interface OAuthApp {
+  id: string;
+  clientId: string;
+  name: string;
+  redirectUrl: string;
+  iconUrl?: string;
+  scopes: string[];
+  createdAt: string;
+}
+
 export interface Database {
   users: UserProfile[];
   cards: Card[];
@@ -83,6 +93,7 @@ export interface Database {
   tasks: Task[];
   bonuses: Bonus[];
   allowedOAuthDomains: string[];
+  oauthApps: OAuthApp[];
 }
 
 function getDefaultDb(): Database {
@@ -93,6 +104,7 @@ function getDefaultDb(): Database {
     tasks: [],
     bonuses: [],
     allowedOAuthDomains: [],
+    oauthApps: [],
   };
 }
 
@@ -171,6 +183,7 @@ export function readDb(): Database {
       };
     }
     if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
+    if (!data.oauthApps) data.oauthApps = [];
     return data as Database;
   } catch (e) {
     return getDefaultDb();
