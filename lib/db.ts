@@ -76,12 +76,13 @@ export interface UserProfile {
   clickHistory: ClickRecord[];
 }
 
-interface Database {
+export interface Database {
   users: UserProfile[];
   cards: Card[];
   transactions: Transaction[];
   tasks: Task[];
   bonuses: Bonus[];
+  allowedOAuthDomains: string[];
 }
 
 function getDefaultDb(): Database {
@@ -91,6 +92,7 @@ function getDefaultDb(): Database {
     transactions: [],
     tasks: [],
     bonuses: [],
+    allowedOAuthDomains: [],
   };
 }
 
@@ -165,8 +167,10 @@ export function readDb(): Database {
         transactions: data.transactions.map((t: any) => ({ ...t, userId: "legacy-user" })),
         tasks: data.tasks.map((t: any) => ({ ...t, userId: "legacy-user" })),
         bonuses: data.bonuses.map((b: any) => ({ ...b, userId: "legacy-user" })),
+        allowedOAuthDomains: [],
       };
     }
+    if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
     return data as Database;
   } catch (e) {
     return getDefaultDb();
