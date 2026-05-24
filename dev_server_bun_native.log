@@ -128,3 +128,4 @@
  GET /api/user 200 in 12ms (next.js: 3ms, application-code: 9ms)
  POST /api/auth/login 200 in 130ms (next.js: 7ms, application-code: 123ms)
  GET /dashboard 200 in 245ms (next.js: 3ms, application-code: 242ms)
+✓ Compiled in 1274ms

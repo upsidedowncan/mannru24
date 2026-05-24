@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Star, CreditCard, LayoutDashboard, X } from "lucide-react";
+import { Sparkles, Star, CreditCard, LayoutDashboard, X, Skull, Terminal, AlertTriangle } from "lucide-react";
 import { useProgression } from "@/lib/progression";
 
 interface Particle {
@@ -55,9 +55,17 @@ export function LevelUpDialog() {
 
   if (!latest) return null;
 
+  const isConspiracyLevel = latest.newLevel === 15;
+
   return (
     <Dialog open={show} onOpenChange={handleClose}>
-      <DialogContent className="max-w-sm text-center overflow-hidden border-0 bg-gradient-to-b from-background via-background to-background/95">
+      <DialogContent
+        className={`max-w-sm text-center overflow-hidden border-0 transition-colors duration-1000 ${
+          isConspiracyLevel
+            ? "bg-black text-red-500 shadow-[0_0_100px_rgba(239,68,68,0.2)]"
+            : "bg-gradient-to-b from-background via-background to-background/95"
+        }`}
+      >
         <DialogTitle className="sr-only">Level Up</DialogTitle>
         <button
           onClick={handleClose}
@@ -67,7 +75,52 @@ export function LevelUpDialog() {
         </button>
 
         <div className="relative">
-          <AnimatePresence>
+          {isConspiracyLevel ? (
+            <div className="py-6 space-y-6">
+               <motion.div
+                 initial={{ opacity: 0 }}
+                 animate={{ opacity: [0, 1, 0, 1, 0.5, 1] }}
+                 transition={{ duration: 2, repeat: Infinity }}
+                 className="flex justify-center"
+               >
+                 <Skull className="w-20 h-20 text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]" />
+               </motion.div>
+
+               <div className="space-y-2">
+                 <motion.h2
+                   initial={{ scale: 0.8, opacity: 0 }}
+                   animate={{ scale: 1, opacity: 1 }}
+                   className="text-4xl font-black tracking-tighter uppercase italic"
+                 >
+                   Уровень 15
+                 </motion.h2>
+                 <motion.p
+                   animate={{ opacity: [1, 0.4, 1] }}
+                   transition={{ duration: 0.1, repeat: Infinity, repeatDelay: 3 }}
+                   className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest"
+                 >
+                   Инициализация протокола «Капитал»...
+                 </motion.p>
+               </div>
+
+               <div className="bg-zinc-900/50 border border-red-900/30 p-4 rounded font-mono text-[11px] text-left space-y-1 overflow-hidden">
+                 <p className="text-red-800 underline">ВНИМАНИЕ: ДОСТУП ОГРАНИЧЕН</p>
+                 <p className="text-zinc-600">{" >> "} Анализ логов кликов завершен.</p>
+                 <p className="text-zinc-600">{" >> "} Обнаружена критическая задолженность.</p>
+                 <p className="text-zinc-600">{" >> "} Секция «Инвестиции» теперь активна.</p>
+                 <p className="text-red-500 animate-pulse">{" >> "} ПРИГОТОВЬТЕСЬ УЗНАТЬ ПРАВДУ.</p>
+               </div>
+
+               <Button
+                 onClick={handleClose}
+                 className="w-full h-14 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-lg shadow-2xl shadow-red-600/20 group"
+               >
+                 ПРИНЯТЬ СУДЬБУ <Terminal className="ml-2 w-5 h-5 group-hover:animate-pulse" />
+               </Button>
+            </div>
+          ) : (
+          <>
+          <AnimatePresence mode="popLayout">
             {particles.map((p) => (
               <motion.div
                 key={p.id}
@@ -183,6 +236,8 @@ export function LevelUpDialog() {
               Продолжить <Star className="w-4 h-4" />
             </Button>
           </motion.div>
+          </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
