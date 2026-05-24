@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Shield, Check, X, Globe, Lock, User, CreditCard, BarChart3, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,7 +51,7 @@ function scopeMeta(scope: string) {
   );
 }
 
-export default function OAuthAuthorizePage() {
+function OAuthAuthorizeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -305,5 +305,19 @@ export default function OAuthAuthorizePage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function OAuthAuthorizePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full border-4 border-zinc-800 border-t-red-600 animate-spin" />
+        </div>
+      }
+    >
+      <OAuthAuthorizeContent />
+    </Suspense>
   );
 }
