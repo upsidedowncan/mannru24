@@ -41,6 +41,38 @@ export async function getSession() {
   }
 }
 
+export type BearerAuthResult =
+  | { ok: true; userId: string; scopes: string[] }
+  | { ok: false; error: string; status: 401 | 403 };
+
+/**
+ * Resolves a Bearer token from the Authorization header and verifies the
+ * required OAuth scope.  Returns null when no token is present (caller should
+ * fall back to cookie session).  Returns an error result when the token is
+ * present but invalid, expired, or lacks the required scope.
+ */
+export async function resolveBearerAuth(
+  req: Request,
+  requiredScope: string
+): Promise<BearerAuthResult | null> {
+  const authHeader = req.headers.get("authorization");
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+  if (!token) return null;
+
+  let payload: any;
+  try {
+    payload = await decrypt(token);
+  } catch {
+    return { ok: false, error: "Invalid or expired token", status: 401 };
+  }
+
+  if (!Array.isArray(payload.scopes) || !payload.scopes.includes(requiredScope)) {
+    return { ok: false, error: "Insufficient scope", status: 403 };
+  }
+
+  return { ok: true, userId: payload.user.id, scopes: payload.scopes };
+}
+
 export async function updateSession(request: NextRequest) {
   const session = request.cookies.get("session")?.value;
   if (!session) return;

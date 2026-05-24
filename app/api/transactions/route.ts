@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readDb, writeDb, Transaction, addXp, calculateLevel, logClick } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, resolveBearerAuth } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
 
 function updateTasksForTransaction(db: any, userId: string, tx: any) {
@@ -60,21 +60,41 @@ export async function OPTIONS(req: Request) {
 
 export async function GET(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+
+  const bearer = await resolveBearerAuth(req, "read:transactions");
+  let userId: string;
+  if (bearer === null) {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+    userId = session.user.id;
+  } else if (!bearer.ok) {
+    return NextResponse.json({ error: bearer.error }, { status: bearer.status, headers: corsHeaders });
+  } else {
+    userId = bearer.userId;
+  }
 
   const db = readDb();
   const { searchParams } = new URL(req.url);
   const limit = searchParams.get("limit");
-  let transactions = db.transactions.filter(t => t.userId === session.user.id);
+  let transactions = db.transactions.filter(t => t.userId === userId);
   if (limit) transactions = transactions.slice(0, parseInt(limit));
   return NextResponse.json(transactions, { headers: corsHeaders });
 }
 
 export async function POST(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+
+  const bearer = await resolveBearerAuth(req, "write:transfers");
+  let userId: string;
+  if (bearer === null) {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+    userId = session.user.id;
+  } else if (!bearer.ok) {
+    return NextResponse.json({ error: bearer.error }, { status: bearer.status, headers: corsHeaders });
+  } else {
+    userId = bearer.userId;
+  }
 
   const db = readDb();
   const body = await req.json();
@@ -87,7 +107,7 @@ export async function POST(req: NextRequest) {
 
   const tx: Transaction = {
     id: crypto.randomUUID(),
-    userId: session.user.id,
+    userId,
     name: body.name,
     category: body.category || "Покупки",
     amount: body.amount,
@@ -97,22 +117,22 @@ export async function POST(req: NextRequest) {
   };
 
   db.transactions.unshift(tx);
-  logClick(db, session.user.id, `Транзакция: ${body.name} (${body.amount} MR)`);
+  logClick(db, userId, `Транзакция: ${body.name} (${body.amount} MR)`);
   if (body.cardId) {
-    const card = db.cards.find((c: any) => c.id === body.cardId && c.userId === session.user.id);
+    const card = db.cards.find((c: any) => c.id === body.cardId && c.userId === userId);
     if (card) card.balance += body.amount;
   }
 
   let txLevelUps: number[] = [];
   if (body.amount < 0) {
     const spentXp = Math.floor(Math.abs(body.amount) / 100);
-    if (spentXp > 0) txLevelUps = addXp(db, session.user.id, spentXp);
+    if (spentXp > 0) txLevelUps = addXp(db, userId, spentXp);
   }
 
-  const completedTasks = updateTasksForTransaction(db, session.user.id, tx);
+  const completedTasks = updateTasksForTransaction(db, userId, tx);
   writeDb(db);
 
-  const user = db.users.find(u => u.id === session.user.id);
+  const user = db.users.find(u => u.id === userId);
   const { level, currentXp, nextXp } = calculateLevel(user?.xp || 0);
 
   return NextResponse.json({ transaction: tx, completedTasks, levelUps: txLevelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201, headers: corsHeaders });

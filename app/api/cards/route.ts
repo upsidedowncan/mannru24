@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readDb, writeDb, Card, CardTier, addXp, calculateLevel, logClick } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, resolveBearerAuth } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
 
 const emojiTiers: CardTier[] = ["gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
@@ -26,17 +26,34 @@ export async function OPTIONS(req: Request) {
 
 export async function GET(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+
+  const bearer = await resolveBearerAuth(req, "read:balance");
+  let userId: string;
+  if (bearer === null) {
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+    userId = session.user.id;
+  } else if (!bearer.ok) {
+    return NextResponse.json({ error: bearer.error }, { status: bearer.status, headers: corsHeaders });
+  } else {
+    userId = bearer.userId;
+  }
 
   const db = readDb();
-  logClick(db, session.user.id, "Просмотр списка карт");
+  logClick(db, userId, "Просмотр списка карт");
   writeDb(db);
-  return NextResponse.json(db.cards.filter(c => c.userId === session.user.id), { headers: corsHeaders });
+  return NextResponse.json(db.cards.filter(c => c.userId === userId), { headers: corsHeaders });
 }
 
 export async function POST(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
+
+  // No write:cards scope exists; card creation requires a cookie session.
+  const bearer = await resolveBearerAuth(req, "write:cards");
+  if (bearer !== null) {
+    return NextResponse.json({ error: bearer.ok ? "Insufficient scope" : bearer.error }, { status: bearer.ok ? 403 : bearer.status, headers: corsHeaders });
+  }
+
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
@@ -76,6 +93,13 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
+
+  // No write:cards scope exists; card deletion requires a cookie session.
+  const bearer = await resolveBearerAuth(req, "write:cards");
+  if (bearer !== null) {
+    return NextResponse.json({ error: bearer.ok ? "Insufficient scope" : bearer.error }, { status: bearer.ok ? 403 : bearer.status, headers: corsHeaders });
+  }
+
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
@@ -91,6 +115,13 @@ export async function DELETE(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
+
+  // No write:cards scope exists; card updates require a cookie session.
+  const bearer = await resolveBearerAuth(req, "write:cards");
+  if (bearer !== null) {
+    return NextResponse.json({ error: bearer.ok ? "Insufficient scope" : bearer.error }, { status: bearer.ok ? 403 : bearer.status, headers: corsHeaders });
+  }
+
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
