@@ -96,7 +96,7 @@ export default function LoginPage() {
               <form onSubmit={handlePhoneSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Номер телефона или Логин</Label>
-                  <Input id="phone" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Александр" autoFocus />
+                  <Input id="phone" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (900) 000-00-00" autoFocus />
                 </div>
                 <Button type="submit" variant="gradient" className="w-full gap-2" disabled={loading}>
                   {loading ? "Загрузка..." : "Продолжить"} <ArrowRight className="w-4 h-4" />

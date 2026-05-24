@@ -20,6 +20,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useProgression } from "@/lib/progression";
 import { pageUnlockLevel } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 
 const navItems = [
   { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
@@ -34,7 +35,13 @@ const navItems = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { level, xp, currentXp, nextXp } = useProgression();
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
 
   return (
     <aside
@@ -110,7 +117,10 @@ export function Sidebar() {
           <Settings className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Настройки</span>}
         </Link>
-        <button className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-accent/50 transition-colors w-full">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-accent/50 transition-colors w-full"
+        >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Выйти</span>}
         </button>
