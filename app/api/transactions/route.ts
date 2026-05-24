@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readDb, writeDb, Transaction, addXp, calculateLevel, logClick } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { getCorsHeaders } from "@/lib/cors";
 
 function updateTasksForTransaction(db: any, userId: string, tx: any) {
   const completedTaskIds: string[] = [];
@@ -53,21 +54,27 @@ function updateTasksForTransaction(db: any, userId: string, tx: any) {
   return completedTaskIds;
 }
 
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, { status: 204, headers: getCorsHeaders(req) });
+}
+
 export async function GET(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   const { searchParams } = new URL(req.url);
   const limit = searchParams.get("limit");
   let transactions = db.transactions.filter(t => t.userId === session.user.id);
   if (limit) transactions = transactions.slice(0, parseInt(limit));
-  return NextResponse.json(transactions);
+  return NextResponse.json(transactions, { headers: corsHeaders });
 }
 
 export async function POST(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   const body = await req.json();
@@ -75,7 +82,7 @@ export async function POST(req: NextRequest) {
   // Emoji code validation
   if (body.category === "Переводы" && body.emojiCode) {
     if (!/^[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]{4}$/u.test(body.emojiCode)) {
-       return NextResponse.json({ error: "Invalid emoji code. Exactly 4 emojis required." }, { status: 400 });
+       return NextResponse.json({ error: "Invalid emoji code. Exactly 4 emojis required." }, { status: 400, headers: corsHeaders });
     }
   }
 
@@ -109,5 +116,5 @@ export async function POST(req: NextRequest) {
   const user = db.users.find(u => u.id === session.user.id);
   const { level, currentXp, nextXp } = calculateLevel(user?.xp || 0);
 
-  return NextResponse.json({ transaction: tx, completedTasks, levelUps: txLevelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201 });
+  return NextResponse.json({ transaction: tx, completedTasks, levelUps: txLevelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201, headers: corsHeaders });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readDb, writeDb, Card, CardTier, addXp, calculateLevel, logClick } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { getCorsHeaders } from "@/lib/cors";
 
 const emojiTiers: CardTier[] = ["gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
 const emojiPool = ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🪲","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍","🦧","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🦬","🐃","🐂","🐄","🐎","🐖","🐏","🐑","🦙","🐐","🦌","🐕","🐩","🦮","🐈","🐓","🦃","🦤","🦚","🦜","🦢","🦩","🕊️","🐇","🦝","🦨","🦡","🦫","🦦","🦥","🐁","🐀","🐿️","🦔"];
@@ -19,19 +20,25 @@ function generateEmojiCode(existingCodes: string[]): string {
   return code;
 }
 
-export async function GET() {
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, { status: 204, headers: getCorsHeaders(req) });
+}
+
+export async function GET(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   logClick(db, session.user.id, "Просмотр списка карт");
   writeDb(db);
-  return NextResponse.json(db.cards.filter(c => c.userId === session.user.id));
+  return NextResponse.json(db.cards.filter(c => c.userId === session.user.id), { headers: corsHeaders });
 }
 
 export async function POST(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   const body = await req.json();
@@ -64,31 +71,33 @@ export async function POST(req: NextRequest) {
   const user = db.users.find(u => u.id === session.user.id);
   const { level, currentXp, nextXp } = calculateLevel(user?.xp || 0);
 
-  return NextResponse.json({ card: newCard, levelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201 });
+  return NextResponse.json({ card: newCard, levelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201, headers: corsHeaders });
 }
 
 export async function DELETE(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400, headers: corsHeaders });
 
   db.cards = db.cards.filter((c) => c.id !== id || c.userId !== session.user.id);
   writeDb(db);
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true }, { headers: corsHeaders });
 }
 
 export async function PATCH(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   const body = await req.json();
   const idx = db.cards.findIndex((c) => c.id === body.id && c.userId === session.user.id);
-  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404, headers: corsHeaders });
 
   if (body.sourceCardId && body.upgradeCost) {
     if (body.sourceCardId === body.id) {
@@ -106,5 +115,5 @@ export async function PATCH(req: NextRequest) {
 
   db.cards[idx] = { ...db.cards[idx], ...body };
   writeDb(db);
-  return NextResponse.json(db.cards[idx]);
+  return NextResponse.json(db.cards[idx], { headers: corsHeaders });
 }

@@ -1,19 +1,42 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { readDb, writeDb, calculateLevel } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { getCorsHeaders } from "@/lib/cors";
 
-const DEV_PHONE = "+79268911629";
+const DEV_UUID = "62734945-0f34-4ae1-b6e2-1e2939fb09d3";
+const DEV_PERMISSIONS = ["manage_oauth_domains", "read_db", "bypass_limits"];
 
-export async function POST(req: Request) {
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, { status: 204, headers: getCorsHeaders(req) });
+}
+
+export async function GET(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+
+  if (session.user.id !== DEV_UUID) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: corsHeaders });
+  }
+
+  return NextResponse.json(
+    { role: "developer", permissions: DEV_PERMISSIONS, userId: session.user.id },
+    { headers: corsHeaders }
+  );
+}
+
+export async function POST(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+
+  if (session.user.id !== DEV_UUID) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: corsHeaders });
+  }
 
   const db = readDb();
   const user = db.users.find(u => u.id === session.user.id);
-
-  if (!user || user.phone !== DEV_PHONE) {
-    return NextResponse.json({ error: "Access denied. Target: " + DEV_PHONE }, { status: 403 });
-  }
+  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404, headers: corsHeaders });
 
   const body = await req.json();
   const { type, amount, cardId } = body;
@@ -26,20 +49,17 @@ export async function POST(req: Request) {
     const card = db.cards.find(c => c.id === cardId && c.userId === user.id);
     if (card) card.balance += parseInt(amount);
   } else if (type === "level") {
-    // Force a level
     const targetLevel = parseInt(amount);
-    // XP for level N: 100 * (N-1)*N / 2 is the OLD formula.
-    // New formula is recursive. Let's just approximate or set precisely.
     let totalXp = 0;
-    let req = 5;
+    let xpReq = 5;
     for (let i = 1; i < targetLevel; i++) {
-        totalXp += req;
-        req = Math.round(req * 1.5);
+      totalXp += xpReq;
+      xpReq = Math.round(xpReq * 1.5);
     }
     user.xp = totalXp;
     user.level = targetLevel;
   }
 
   writeDb(db);
-  return NextResponse.json({ success: true, user });
+  return NextResponse.json({ success: true, user }, { headers: corsHeaders });
 }

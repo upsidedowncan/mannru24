@@ -106,6 +106,9 @@
     }
   ],
   "transactions": [],
+  "allowedOAuthDomains": [
+    "https://mannhacks.vercel.app"
+  ],
   "tasks": [
     {
       "id": "task-1",

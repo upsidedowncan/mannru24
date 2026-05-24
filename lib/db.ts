@@ -82,6 +82,7 @@ interface Database {
   transactions: Transaction[];
   tasks: Task[];
   bonuses: Bonus[];
+  allowedOAuthDomains: string[];
 }
 
 function getDefaultDb(): Database {
@@ -91,6 +92,7 @@ function getDefaultDb(): Database {
     transactions: [],
     tasks: [],
     bonuses: [],
+    allowedOAuthDomains: [],
   };
 }
 
