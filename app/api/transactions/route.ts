@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readDb, writeDb, Transaction, addXp, calculateLevel, logClick } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, decrypt } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
 
 function updateTasksForTransaction(db: any, userId: string, tx: any) {
@@ -54,27 +54,44 @@ function updateTasksForTransaction(db: any, userId: string, tx: any) {
   return completedTaskIds;
 }
 
+async function getAuthUser(req: Request): Promise<{ id: string; name: string } | null> {
+  const authHeader = req.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+  if (bearerToken) {
+    try {
+      const payload = await decrypt(bearerToken);
+      if (payload?.user?.id) return { id: payload.user.id, name: payload.user.name ?? "" };
+      return null;
+    } catch {
+      return null;
+    }
+  }
+  const session = await getSession();
+  if (!session) return null;
+  return { id: session.user.id, name: session.user.name };
+}
+
 export async function OPTIONS(req: Request) {
   return new NextResponse(null, { status: 204, headers: getCorsHeaders(req) });
 }
 
 export async function GET(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+  const currentUser = await getAuthUser(req);
+  if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   const { searchParams } = new URL(req.url);
   const limit = searchParams.get("limit");
-  let transactions = db.transactions.filter(t => t.userId === session.user.id);
+  let transactions = db.transactions.filter(t => t.userId === currentUser.id);
   if (limit) transactions = transactions.slice(0, parseInt(limit));
   return NextResponse.json(transactions, { headers: corsHeaders });
 }
 
 export async function POST(req: NextRequest) {
   const corsHeaders = getCorsHeaders(req);
-  const session = await getSession();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+  const currentUser = await getAuthUser(req);
+  if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
   const body = await req.json();
@@ -87,7 +104,7 @@ export async function POST(req: NextRequest) {
 
   const tx: Transaction = {
     id: crypto.randomUUID(),
-    userId: session.user.id,
+    userId: currentUser.id,
     name: body.name,
     category: body.category || "Покупки",
     amount: body.amount,
@@ -97,22 +114,22 @@ export async function POST(req: NextRequest) {
   };
 
   db.transactions.unshift(tx);
-  logClick(db, session.user.id, `Транзакция: ${body.name} (${body.amount} MR)`);
+  logClick(db, currentUser.id, `Транзакция: ${body.name} (${body.amount} MR)`);
   if (body.cardId) {
-    const card = db.cards.find((c: any) => c.id === body.cardId && c.userId === session.user.id);
+    const card = db.cards.find((c: any) => c.id === body.cardId && c.userId === currentUser.id);
     if (card) card.balance += body.amount;
   }
 
   let txLevelUps: number[] = [];
   if (body.amount < 0) {
     const spentXp = Math.floor(Math.abs(body.amount) / 100);
-    if (spentXp > 0) txLevelUps = addXp(db, session.user.id, spentXp);
+    if (spentXp > 0) txLevelUps = addXp(db, currentUser.id, spentXp);
   }
 
-  const completedTasks = updateTasksForTransaction(db, session.user.id, tx);
+  const completedTasks = updateTasksForTransaction(db, currentUser.id, tx);
   writeDb(db);
 
-  const user = db.users.find(u => u.id === session.user.id);
+  const user = db.users.find(u => u.id === currentUser.id);
   const { level, currentXp, nextXp } = calculateLevel(user?.xp || 0);
 
   return NextResponse.json({ transaction: tx, completedTasks, levelUps: txLevelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201, headers: corsHeaders });
