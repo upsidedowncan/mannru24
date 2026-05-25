@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Terminal, Plus, Zap, Star, Wallet, X, Globe, Trash2, Key } from "lucide-react";
+import { Terminal, Plus, Zap, Star, X, Globe, Trash2, Key, Users, Eye, Ban, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useProgression } from "@/lib/progression";
 
@@ -20,10 +20,25 @@ interface OAuthApp {
   clientId: string;
 }
 
+interface DevUser {
+  id: string;
+  name: string;
+  phone: string;
+  level: number;
+  xp: number;
+  currentXp: number;
+  nextXp: number;
+  bonusBalance: number;
+  totalEarned: number;
+  totalSpent: number;
+  isBanned: boolean;
+  bannedReason: string | null;
+}
+
 export function DevPanel() {
   const [show, setShow] = useState(false);
   const [isDev, setIsDev] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dev" | "oauth">("dev");
+  const [activeTab, setActiveTab] = useState<"dev" | "oauth" | "users">("dev");
   const [xpAdd, setXpAdd] = useState("100");
   const [lvlTarget, setLvlTarget] = useState("15");
   const [moneyAdd, setMoneyAdd] = useState("10000");
@@ -37,7 +52,11 @@ export function DevPanel() {
   const [scopes, setScopes] = useState<string[]>([]);
   const [scopeInput, setScopeInput] = useState("");
 
-  const { refresh } = useProgression();
+  // Users state
+  const [users, setUsers] = useState<DevUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  const { refresh, enterPreview } = useProgression();
 
   useEffect(() => {
     const check = async () => {
@@ -53,6 +72,19 @@ export function DevPanel() {
     };
     check();
   }, []);
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    const res = await fetch("/api/dev/users");
+    if (res.ok) setUsers(await res.json());
+    setLoadingUsers(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === "users" && isDev) {
+      loadUsers();
+    }
+  }, [activeTab, isDev]);
 
   if (!isDev) return null;
 
@@ -113,6 +145,35 @@ export function DevPanel() {
     }
   };
 
+  const handlePreview = (user: DevUser) => {
+    enterPreview({
+      id: user.id,
+      name: user.name,
+      level: user.level,
+      xp: user.xp,
+      currentXp: user.currentXp,
+      nextXp: user.nextXp,
+      bonusBalance: user.bonusBalance,
+    });
+    setShow(false);
+    toast.success(`Просмотр аккаунта: ${user.name}`, { description: "READ-ONLY режим активен" });
+  };
+
+  const handleBanToggle = async (user: DevUser) => {
+    const action = user.isBanned ? "unban" : "ban";
+    const res = await fetch("/api/dev", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, userId: user.id }),
+    });
+    if (res.ok) {
+      toast.success(action === "ban" ? `${user.name} забанен` : `${user.name} разбанен`);
+      loadUsers();
+    } else {
+      toast.error("Ошибка операции");
+    }
+  };
+
   return (
     <>
       <button
@@ -132,7 +193,7 @@ export function DevPanel() {
               <CardTitle className="flex items-center gap-2 text-red-500">
                 <Terminal className="w-5 h-5" /> DEV CONSOLE
               </CardTitle>
-              <div className="flex gap-1 mt-2">
+              <div className="flex gap-1 mt-2 flex-wrap">
                 <button
                   onClick={() => setActiveTab("dev")}
                   className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors ${activeTab === "dev" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
@@ -144,6 +205,12 @@ export function DevPanel() {
                   className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors flex items-center gap-1 ${activeTab === "oauth" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
                 >
                   <Key className="w-3 h-3" /> OAuth Apps
+                </button>
+                <button
+                  onClick={() => setActiveTab("users")}
+                  className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors flex items-center gap-1 ${activeTab === "users" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+                >
+                  <Users className="w-3 h-3" /> Users
                 </button>
               </div>
             </CardHeader>
@@ -277,6 +344,61 @@ export function DevPanel() {
                     </div>
                   )}
                 </>
+              )}
+
+              {activeTab === "users" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] uppercase text-zinc-500 tracking-widest">All Accounts</Label>
+                    <button onClick={loadUsers} className="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono transition-colors">
+                      {loadingUsers ? "Загрузка..." : "↻ Обновить"}
+                    </button>
+                  </div>
+                  {users.length === 0 && !loadingUsers && (
+                    <p className="text-[10px] text-zinc-600 font-mono text-center py-4">Нет пользователей</p>
+                  )}
+                  {users.map(user => (
+                    <div key={user.id} className={`flex items-start gap-2 p-2 rounded-lg border ${user.isBanned ? "bg-red-950/20 border-red-900/40" : "bg-zinc-900 border-zinc-800"}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-[11px] font-bold text-zinc-200 truncate">{user.name}</p>
+                          {user.isBanned && (
+                            <span className="text-[9px] font-mono text-red-400 bg-red-950/50 px-1.5 py-0.5 rounded border border-red-800/50">BANNED</span>
+                          )}
+                          {user.id === DEV_UUID && (
+                            <span className="text-[9px] font-mono text-amber-400 bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-800/50">DEV</span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-zinc-500 font-mono truncate">{user.phone}</p>
+                        <p className="text-[10px] text-zinc-600 font-mono">Lvl {user.level} · {user.bonusBalance} MR</p>
+                        {user.isBanned && user.bannedReason && (
+                          <p className="text-[9px] text-red-500 mt-0.5 truncate">{user.bannedReason}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1 shrink-0">
+                        {user.id !== DEV_UUID && (
+                          <button
+                            onClick={() => handlePreview(user)}
+                            className="flex items-center gap-1 text-[9px] font-mono font-bold text-blue-400 hover:text-blue-300 bg-blue-950/30 hover:bg-blue-950/50 border border-blue-800/40 px-2 py-1 rounded transition-colors"
+                          >
+                            <Eye className="w-2.5 h-2.5" /> Preview
+                          </button>
+                        )}
+                        {user.id !== DEV_UUID && (
+                          <button
+                            onClick={() => handleBanToggle(user)}
+                            className={`flex items-center gap-1 text-[9px] font-mono font-bold px-2 py-1 rounded transition-colors border ${user.isBanned
+                              ? "text-emerald-400 hover:text-emerald-300 bg-emerald-950/30 hover:bg-emerald-950/50 border-emerald-800/40"
+                              : "text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-950/50 border-red-800/40"
+                            }`}
+                          >
+                            {user.isBanned ? <><ShieldCheck className="w-2.5 h-2.5" /> Разбан</> : <><Ban className="w-2.5 h-2.5" /> Бан</>}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
               <p className="text-[9px] text-zinc-600 font-mono text-center pt-2">

@@ -26,7 +26,7 @@ function TransfersPage() {
   const [error, setError] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const { triggerLevelUps } = useProgression();
+  const { triggerLevelUps, isReadOnly } = useProgression();
   const router = useRouter();
 
   useEffect(() => {
@@ -111,7 +111,7 @@ function TransfersPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-white">Переводы</h1>
           <p className="text-muted-foreground text-sm mt-1">Мгновенные переводы по секретному emoji-коду</p>
         </div>
-        <CreateCardDialog onCreated={() => fetch("/api/cards").then(r => r.json()).then(setCards)} existingCards={cards.map(c => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${tierMeta[c.tier].label} ••${c.number.slice(-4)}` }))} />
+        {!isReadOnly && <CreateCardDialog onCreated={() => fetch("/api/cards").then(r => r.json()).then(setCards)} existingCards={cards.map(c => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${tierMeta[c.tier].label} ••${c.number.slice(-4)}` }))} />}
       </div>
 
       {completedTasks.length > 0 && (
@@ -184,7 +184,7 @@ function TransfersPage() {
             variant="gradient"
             className="w-full h-14 text-lg font-bold transition-all disabled:opacity-50 shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
             onClick={handleSend}
-            disabled={sending || !amount || !isValid}
+            disabled={sending || !amount || !isValid || isReadOnly}
           >
             {sending ? "Транзакция..." : `Перевести ${amount || 0} MR`} <ArrowUpRight className="ml-2 w-5 h-5" />
           </Button>

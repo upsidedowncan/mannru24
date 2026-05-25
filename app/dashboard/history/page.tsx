@@ -69,7 +69,14 @@ function HistoryPage() {
                           <div><p className="text-sm font-medium">{tx.name}</p><p className="text-xs text-muted-foreground">{tx.category}</p></div>
                         </div>
                         <div className="text-right">
-                          <p className={`text-sm font-medium ${tx.amount > 0 ? "text-emerald-500" : ""}`}>{tx.amount > 0 ? "+" : ""}{tx.amount.toLocaleString("ru")} МР</p>
+                          <div className="flex items-center justify-end gap-1.5 mb-0.5">
+                            {tx.source && (
+                              <span className="text-[9px] font-mono text-zinc-500 bg-zinc-800/80 px-1.5 py-0.5 rounded border border-zinc-700/50">
+                                via {tx.source}
+                              </span>
+                            )}
+                            <p className={`text-sm font-medium ${tx.amount > 0 ? "text-emerald-500" : ""}`}>{tx.amount > 0 ? "+" : ""}{tx.amount.toLocaleString("ru")} МР</p>
+                          </div>
                           <p className="text-xs text-muted-foreground">{tx.date}</p>
                         </div>
                       </div>
