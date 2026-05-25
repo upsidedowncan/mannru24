@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { readDb, writeDb } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
+const STARTING_PRICE = 0.1;
+
 export async function POST() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -12,6 +14,14 @@ export async function POST() {
 
   const burned = user.mnkHoldings ?? 0;
   user.mnkHoldings = 0;
+
+  // Reset global market state
+  db.mnkMarket = {
+    basePrice: STARTING_PRICE,
+    startTime: Date.now(),
+    candles: [],
+    crashed: false,
+  };
 
   if (burned > 0) {
     db.transactions.unshift({

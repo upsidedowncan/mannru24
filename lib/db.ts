@@ -87,6 +87,21 @@ export interface OAuthApp {
   createdAt: string;
 }
 
+export interface MnkCandle {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
+export interface MnkMarket {
+  basePrice: number;
+  startTime: number;
+  candles: MnkCandle[];
+  crashed: boolean;
+}
+
 export interface Database {
   users: UserProfile[];
   cards: Card[];
@@ -95,6 +110,7 @@ export interface Database {
   bonuses: Bonus[];
   allowedOAuthDomains: string[];
   oauthApps: OAuthApp[];
+  mnkMarket?: MnkMarket;
 }
 
 function getDefaultDb(): Database {
