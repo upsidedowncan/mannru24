@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Terminal, Plus, Zap, Star, Wallet, X, Globe, Trash2, Key } from "lucide-react";
+import { Terminal, Plus, Zap, Star, X, Globe, Trash2, Key, Users, Eye, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { useProgression } from "@/lib/progression";
 
@@ -20,10 +20,21 @@ interface OAuthApp {
   clientId: string;
 }
 
+interface DevUser {
+  id: string;
+  name: string;
+  level: number;
+  xp: number;
+  currentXp: number;
+  nextXp: number;
+  isBanned?: boolean;
+  bannedReason?: string;
+}
+
 export function DevPanel() {
   const [show, setShow] = useState(false);
   const [isDev, setIsDev] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dev" | "oauth">("dev");
+  const [activeTab, setActiveTab] = useState<"dev" | "oauth" | "users">("dev");
   const [xpAdd, setXpAdd] = useState("100");
   const [lvlTarget, setLvlTarget] = useState("15");
   const [moneyAdd, setMoneyAdd] = useState("10000");
@@ -37,7 +48,10 @@ export function DevPanel() {
   const [scopes, setScopes] = useState<string[]>([]);
   const [scopeInput, setScopeInput] = useState("");
 
-  const { refresh } = useProgression();
+  // Users state
+  const [users, setUsers] = useState<DevUser[]>([]);
+
+  const { refresh, enterPreview, previewUserId } = useProgression();
 
   useEffect(() => {
     const check = async () => {
@@ -45,10 +59,17 @@ export function DevPanel() {
       const data = await res.json();
       if (data.id === DEV_UUID) {
         setIsDev(true);
-        const cRes = await fetch("/api/cards");
+        const [cRes, oRes, dRes] = await Promise.all([
+          fetch("/api/cards"),
+          fetch("/api/dev/oauth-apps"),
+          fetch("/api/dev"),
+        ]);
         setCards(await cRes.json());
-        const oRes = await fetch("/api/dev/oauth-apps");
         if (oRes.ok) setOauthApps(await oRes.json());
+        if (dRes.ok) {
+          const devData = await dRes.json();
+          setUsers(devData.users || []);
+        }
       }
     };
     check();
@@ -113,6 +134,27 @@ export function DevPanel() {
     }
   };
 
+  const handlePreview = (user: DevUser) => {
+    enterPreview(user.id, { level: user.level, xp: user.xp, currentXp: user.currentXp, nextXp: user.nextXp });
+    setShow(false);
+    toast.success(`Preview: ${user.name}`, { description: "Режим чтения активен. Нажмите «Выйти из Preview» чтобы вернуться." });
+  };
+
+  const handleBan = async (userId: string, isBanned: boolean) => {
+    const res = await fetch("/api/dev", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: isBanned ? "unban" : "ban", userId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBanned: data.user.isBanned, bannedReason: data.user.bannedReason } : u));
+      toast.success(isBanned ? "Пользователь разбанен" : "Пользователь забанен");
+    } else {
+      toast.error("Ошибка операции");
+    }
+  };
+
   return (
     <>
       <button
@@ -132,7 +174,7 @@ export function DevPanel() {
               <CardTitle className="flex items-center gap-2 text-red-500">
                 <Terminal className="w-5 h-5" /> DEV CONSOLE
               </CardTitle>
-              <div className="flex gap-1 mt-2">
+              <div className="flex gap-1 mt-2 flex-wrap">
                 <button
                   onClick={() => setActiveTab("dev")}
                   className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors ${activeTab === "dev" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
@@ -144,6 +186,12 @@ export function DevPanel() {
                   className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors flex items-center gap-1 ${activeTab === "oauth" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
                 >
                   <Key className="w-3 h-3" /> OAuth Apps
+                </button>
+                <button
+                  onClick={() => setActiveTab("users")}
+                  className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors flex items-center gap-1 ${activeTab === "users" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
+                >
+                  <Users className="w-3 h-3" /> Users
                 </button>
               </div>
             </CardHeader>
@@ -277,6 +325,55 @@ export function DevPanel() {
                     </div>
                   )}
                 </>
+              )}
+
+              {activeTab === "users" && (
+                <div className="space-y-3">
+                  <Label className="text-[10px] uppercase text-zinc-500 tracking-widest">All Accounts</Label>
+                  {users.length === 0 && (
+                    <p className="text-[10px] text-zinc-600 font-mono text-center py-4">No users found</p>
+                  )}
+                  {users.map(u => (
+                    <div key={u.id} className="flex items-center gap-2 bg-zinc-900 p-2 rounded-lg border border-zinc-800">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-[11px] font-bold text-zinc-200 truncate">{u.name}</p>
+                          {u.isBanned && (
+                            <span className="shrink-0 text-[9px] font-mono bg-red-500/20 text-red-400 border border-red-500/30 px-1 py-0 rounded">BANNED</span>
+                          )}
+                          {u.id === DEV_UUID && (
+                            <span className="shrink-0 text-[9px] font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1 py-0 rounded">DEV</span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-zinc-500 font-mono">Lvl {u.level} · {u.xp} XP</p>
+                        {u.isBanned && u.bannedReason && (
+                          <p className="text-[9px] text-red-500/70 font-mono truncate mt-0.5">{u.bannedReason}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          onClick={() => handlePreview(u)}
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2 text-[10px] gap-1"
+                          disabled={u.id === DEV_UUID || !!previewUserId}
+                        >
+                          <Eye className="w-3 h-3" /> Preview
+                        </Button>
+                        <Button
+                          onClick={() => handleBan(u.id, !!u.isBanned)}
+                          size="sm"
+                          variant={u.isBanned ? "outline" : "destructive"}
+                          className="h-7 px-2 text-[10px] gap-1"
+                          disabled={u.id === DEV_UUID}
+                        >
+                          <Ban className="w-3 h-3" />
+                          {u.isBanned ? "Разбанить" : "Забанить"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
               <p className="text-[9px] text-zinc-600 font-mono text-center pt-2">

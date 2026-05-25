@@ -19,6 +19,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
+    if (user.isBanned) {
+      return NextResponse.json({ error: "Ваш аккаунт забанен администрацией коалиции MANNHAXORS", code: "BANNED" }, { status: 403 });
+    }
+
     await login({ id: user.id, name: user.name });
     logClick(db, user.id, "Вход в систему");
     writeDb(db);

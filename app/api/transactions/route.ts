@@ -54,13 +54,13 @@ function updateTasksForTransaction(db: any, userId: string, tx: any) {
   return completedTaskIds;
 }
 
-async function getAuthUser(req: Request): Promise<{ id: string; name: string } | null> {
+async function getAuthUser(req: Request): Promise<{ id: string; name: string; appName?: string } | null> {
   const authHeader = req.headers.get("authorization");
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
   if (bearerToken) {
     try {
       const payload = await decrypt(bearerToken);
-      if (payload?.user?.id) return { id: payload.user.id, name: payload.user.name ?? "" };
+      if (payload?.user?.id) return { id: payload.user.id, name: payload.user.name ?? "", appName: payload.appName as string | undefined };
       return null;
     } catch {
       return null;
@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
     date: body.date || new Date().toLocaleString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
     cardId: body.cardId,
     emojiCode: body.emojiCode || null,
+    source: currentUser.appName,
   };
 
   db.transactions.unshift(tx);

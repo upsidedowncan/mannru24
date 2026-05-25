@@ -15,6 +15,7 @@ import { useProgression } from "@/lib/progression";
 interface CreateCardDialogProps {
   onCreated: () => void;
   existingCards: { id: string; tier: CardTier; balance: number; label: string }[];
+  disabled?: boolean;
 }
 
 const tierOrder: CardTier[] = ["bronze", "silver", "gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
@@ -33,7 +34,7 @@ const upgradeCosts: Record<CardTier, number> = {
   obsidian: 50000,
 };
 
-export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogProps) {
+export function CreateCardDialog({ onCreated, existingCards, disabled }: CreateCardDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"tier" | "details" | "fund">("tier");
   const [tier, setTier] = useState<CardTier>("bronze");
@@ -110,7 +111,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
   return (
     <Dialog open={open} onOpenChange={(o) => { if (o) { setOpen(true); setStep("tier"); } else setOpen(false); }}>
       <DialogTrigger asChild>
-        <Button variant="gradient" size="sm" className="gap-1.5">
+        <Button variant="gradient" size="sm" className="gap-1.5" disabled={disabled}>
           <Plus className="w-4 h-4" />
           Новая карта
         </Button>

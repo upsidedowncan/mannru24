@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readDb, writeDb, calculateLevel } from "@/lib/db";
+import { readDb, writeDb, calculateLevel, type UserProfile } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
 
@@ -27,10 +27,52 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Forbidden", role: null }, { status: 403, headers: corsHeaders });
   }
 
+  const users = db.users.map((u: UserProfile) => {
+    const { passwordHash, ...safeUser } = u;
+    const { level, currentXp, nextXp } = calculateLevel(u.xp);
+    return { ...safeUser, level, currentXp, nextXp };
+  });
+
   return NextResponse.json(
-    { ...DEV_ROLE, user: { id: user.id, name: user.name, level: user.level } },
+    { ...DEV_ROLE, user: { id: user.id, name: user.name, level: user.level }, users },
     { headers: corsHeaders }
   );
+}
+
+export async function PATCH(req: Request) {
+  const corsHeaders = getCorsHeaders(req);
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+  }
+
+  const db = readDb();
+  const requester = db.users.find(u => u.id === session.user.id);
+  if (!requester || requester.id !== DEV_UUID) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: corsHeaders });
+  }
+
+  const body = await req.json();
+  const { type, userId, bannedReason } = body;
+
+  const target = db.users.find(u => u.id === userId);
+  if (!target) {
+    return NextResponse.json({ error: "User not found" }, { status: 404, headers: corsHeaders });
+  }
+
+  if (type === "ban") {
+    target.isBanned = true;
+    target.bannedReason = bannedReason || "Нарушение правил коалиции MANNHAXORS";
+  } else if (type === "unban") {
+    target.isBanned = false;
+    target.bannedReason = undefined;
+  } else {
+    return NextResponse.json({ error: "Invalid type" }, { status: 400, headers: corsHeaders });
+  }
+
+  writeDb(db);
+  const { passwordHash, ...safeUser } = target;
+  return NextResponse.json({ success: true, user: safeUser }, { headers: corsHeaders });
 }
 
 export async function POST(req: Request) {

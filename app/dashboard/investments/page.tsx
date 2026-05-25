@@ -160,7 +160,7 @@ function CandleChart({ candles, currentCandle, price }: ChartProps) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function InvestmentsPage() {
-  const { level } = useProgression();
+  const { level, isReadOnly } = useProgression();
   const {
     price,
     priceTrend,
@@ -421,7 +421,7 @@ export default function InvestmentsPage() {
                     variant="emerald"
                     className="w-full"
                     onClick={handleBuy}
-                    disabled={busy || !buyAmt || parseFloat(buyAmt) <= 0}
+                    disabled={busy || !buyAmt || parseFloat(buyAmt) <= 0 || isReadOnly}
                   >
                     {busy ? "Исполняем…" : "Купить MNK"}
                   </Button>
@@ -464,7 +464,7 @@ export default function InvestmentsPage() {
                     variant="destructive"
                     className="w-full"
                     onClick={handleSell}
-                    disabled={busy || !sellAmt || parseFloat(sellAmt) <= 0 || mnkHoldings === 0}
+                    disabled={busy || !sellAmt || parseFloat(sellAmt) <= 0 || mnkHoldings === 0 || isReadOnly}
                   >
                     {busy ? "Исполняем…" : "Продать MNK"}
                   </Button>
