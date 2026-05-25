@@ -1,213 +1,542 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, Lock, Skull, AlertTriangle, ShieldAlert, RefreshCw, FileText } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useProgression } from "@/lib/progression";
+import { useMarket, type Candle, type CurrentCandle } from "@/lib/market";
+import { Lock, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-function TypewriterText({ text }: { text: string }) {
-  const [displayedText, setDisplayedText] = useState("");
-  const [index, setIndex] = useState(0);
+// ─── Price formatting ────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (index < text.length) {
-      const timeout = setTimeout(() => {
-        setDisplayedText((prev) => prev + text[index]);
-        setIndex((prev) => prev + 1);
-      }, 5 + Math.random() * 15);
-      return () => clearTimeout(timeout);
-    }
-  }, [index, text]);
-
-  return <>{displayedText}<span className="inline-block w-1 h-4 bg-blue-500 animate-pulse ml-0.5" /></>;
+function fmtPrice(p: number): string {
+  if (p < 0.0001) return p.toExponential(3);
+  if (p < 0.01) return p.toFixed(5);
+  if (p < 1) return p.toFixed(4);
+  if (p < 100) return p.toFixed(2);
+  if (p < 10_000) return p.toLocaleString("ru", { maximumFractionDigits: 1 });
+  if (p < 1_000_000) return Math.round(p / 1_000) + "K";
+  return (p / 1_000_000).toFixed(2) + "M";
 }
 
-export default function InvestmentsPage() {
-  const { level } = useProgression();
-  const [revealing, setRevealing] = useState(false);
-  const [report, setReport] = useState<string | null>(null);
-  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
+function fmtMnk(n: number): string {
+  if (n === 0) return "0.000000";
+  if (n < 0.000001) return n.toExponential(3);
+  return n.toFixed(6);
+}
 
-  const startReveal = async () => {
-    setRevealing(true);
-    setReport(null);
-    setTerminalLogs([]);
+// ─── Candlestick Chart ────────────────────────────────────────────────────────
 
-    // Multi-step fake terminal logic for drama
-    const steps = [
-      ">> Доступ разрешен. Уровень 15 подтвержден.",
-      ">> Инициализация модуля 'Великий Кредитный Заговор'...",
-      ">> Сканирование истории кликов за всё время...",
-      ">> Анализ попыток перехитрить систему...",
-      ">> Соединение с ИИ Банка (openrouter/owl-alpha)...",
-      ">> Генерация штрафного отчета..."
-    ];
+const PAD = { t: 8, r: 56, b: 8, l: 2 };
 
-    for (const step of steps) {
-      setTerminalLogs(prev => [...prev, step]);
-      await new Promise(r => setTimeout(r, 600));
-    }
+interface ChartProps {
+  candles: Candle[];
+  currentCandle: CurrentCandle | null;
+  price: number;
+}
 
-    try {
-      const res = await fetch("/api/investments/reveal", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        setReport(data.reveal);
-      } else {
-        setReport(`КРИТИЧЕСКАЯ ОШИБКА: ${data.error || "Сбой системы"}`);
-      }
-    } catch (e) {
-      setReport("Связь с Центром Заговоров прервана. Налоговая уже выехала.");
-    } finally {
-      setRevealing(false);
-    }
-  };
+function CandleChart({ candles, currentCandle, price }: ChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 600, h: 200 });
 
   useEffect(() => {
-    if (level >= 15 && !report && !revealing) {
-      startReveal();
-    }
-  }, [level]);
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const e = entries[0];
+      if (e) setDims({ w: e.contentRect.width, h: e.contentRect.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-  if (level < 15) {
+  type DisplayCandle = { open: number; high: number; low: number; close: number; live?: true };
+
+  const display: DisplayCandle[] = [
+    ...candles.slice(-50),
+    ...(currentCandle
+      ? [{ open: currentCandle.open, high: currentCandle.high, low: currentCandle.low, close: price, live: true as const }]
+      : []),
+  ];
+
+  const plotW = dims.w - PAD.l - PAD.r;
+  const plotH = dims.h - PAD.t - PAD.b;
+
+  if (display.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-          <TrendingUp className="w-10 h-10 text-blue-500" />
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tighter text-white uppercase">Инвестиционный Портал</h1>
-          <p className="text-zinc-500 max-w-md">
-            Здесь вы сможете приумножить свои воображаемые капиталы, если, конечно, обладаете достаточным уровнем цинизма.
-          </p>
-        </div>
-
-        <Card className="bg-zinc-950 border-zinc-900 border-dashed max-w-sm w-full">
-          <CardContent className="pt-6 flex flex-col items-center gap-4">
-            <Badge variant="outline" className="border-blue-500/30 text-blue-400 bg-blue-500/5 px-3 py-1">
-              <Lock className="w-3 h-3 mr-1.5" /> Требуется 15 уровень
-            </Badge>
-            <p className="text-xs text-zinc-600 italic">
-              "Инвестиции — это способ перераспределения денег от нетерпеливых к терпеливым... или просто к нам."
-            </p>
-          </CardContent>
-        </Card>
+      <div
+        ref={containerRef}
+        className="w-full h-full flex items-center justify-center text-zinc-600 font-mono text-xs"
+      >
+        Инициализация рынка...
       </div>
     );
   }
 
+  const allV = display.flatMap((c) => [c.high, c.low]);
+  const rawMin = Math.min(...allV);
+  const rawMax = Math.max(...allV);
+  const range = rawMax - rawMin || rawMax * 0.2;
+  const yMin = rawMin - range * 0.06;
+  const yMax = rawMax + range * 0.06;
+
+  const n = display.length;
+  const cw = plotW / n;
+  const bw = Math.max(1.5, cw * 0.56);
+
+  const sy = (v: number) => PAD.t + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+  const sx = (i: number) => PAD.l + (i + 0.5) * cw;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({
+    price: yMin + (yMax - yMin) * t,
+    y: sy(yMin + (yMax - yMin) * t),
+  }));
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 py-12">
-      <AnimatePresence mode="wait">
-        {revealing && (
+    <div ref={containerRef} className="w-full h-full">
+      <svg width={dims.w} height={dims.h} style={{ display: "block" }}>
+        {/* Grid lines */}
+        {yTicks.map(({ y }, i) => (
+          <line
+            key={i}
+            x1={PAD.l}
+            y1={y}
+            x2={dims.w - PAD.r}
+            y2={y}
+            stroke="#27272a"
+            strokeWidth="0.5"
+          />
+        ))}
+
+        {/* Y axis labels */}
+        {yTicks.map(({ price: p, y }, i) => (
+          <text
+            key={i}
+            x={dims.w - PAD.r + 4}
+            y={y}
+            fill="#52525b"
+            fontSize="9"
+            fontFamily="monospace"
+            dominantBaseline="middle"
+          >
+            {fmtPrice(p)}
+          </text>
+        ))}
+
+        {/* Current price dashed line */}
+        <line
+          x1={PAD.l}
+          y1={sy(price)}
+          x2={dims.w - PAD.r}
+          y2={sy(price)}
+          stroke="#3f3f46"
+          strokeWidth="0.5"
+          strokeDasharray="4,3"
+        />
+
+        {/* Candles */}
+        {display.map((c, i) => {
+          const isGreen = c.close >= c.open;
+          const clr = isGreen ? "#22c55e" : "#ef4444";
+          const x = sx(i);
+          const bodyTop = sy(Math.max(c.open, c.close));
+          const bodyBot = sy(Math.min(c.open, c.close));
+          const bh = Math.max(1, bodyBot - bodyTop);
+
+          return (
+            <g key={i} opacity={c.live ? 0.7 : 1}>
+              <line
+                x1={x}
+                y1={sy(c.high)}
+                x2={x}
+                y2={sy(c.low)}
+                stroke={clr}
+                strokeWidth="0.8"
+              />
+              <rect
+                x={x - bw / 2}
+                y={bodyTop}
+                width={bw}
+                height={bh}
+                fill={isGreen ? "#22c55e33" : "#ef444433"}
+                stroke={clr}
+                strokeWidth="0.5"
+              />
+            </g>
+          );
+        })}
+
+        {/* Live dot on current candle */}
+        {currentCandle && n > 0 && (
+          <circle
+            cx={sx(n - 1)}
+            cy={sy(price)}
+            r="2.5"
+            fill="#22d3ee"
+          />
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+export default function InvestmentsPage() {
+  const { level } = useProgression();
+  const {
+    price,
+    priceTrend,
+    candles,
+    currentCandle,
+    mnkHoldings,
+    isCrashed,
+    priceChangePercent,
+    buy,
+    sell,
+    resetCrash,
+    refreshHoldings,
+  } = useMarket();
+
+  const [tab, setTab] = useState<"buy" | "sell">("buy");
+  const [buyAmt, setBuyAmt] = useState("");
+  const [sellAmt, setSellAmt] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [cards, setCards] = useState<any[]>([]);
+  const [showCrash, setShowCrash] = useState(false);
+  const crashShownRef = useRef(false);
+
+  const loadCards = useCallback(async () => {
+    const res = await fetch("/api/cards");
+    if (res.ok) setCards(await res.json());
+  }, []);
+
+  useEffect(() => {
+    loadCards();
+  }, [loadCards]);
+
+  useEffect(() => {
+    if (isCrashed && !crashShownRef.current) {
+      crashShownRef.current = true;
+      setShowCrash(true);
+    }
+  }, [isCrashed]);
+
+  const totalBalance = cards.reduce((s: number, c: any) => s + (c.balance ?? 0), 0);
+  const mnkValue = mnkHoldings * price;
+  const buyPreview = buyAmt && price > 0 ? parseFloat(buyAmt) / price : null;
+  const sellPreview = sellAmt && price > 0 ? parseFloat(sellAmt) * price : null;
+
+  const handleBuy = async () => {
+    const amt = parseFloat(buyAmt);
+    if (!amt || amt <= 0) { toast.error("Введите сумму"); return; }
+    if (amt > totalBalance) { toast.error("Недостаточно средств"); return; }
+    setBusy(true);
+    const r = await buy(amt);
+    if (r.success) {
+      toast.success(`Куплено ${fmtMnk(amt / price)} MNK`, {
+        description: `Списано ${amt.toLocaleString("ru")} МР`,
+      });
+      setBuyAmt("");
+      loadCards();
+    } else {
+      toast.error(r.error ?? "Ошибка сделки");
+    }
+    setBusy(false);
+  };
+
+  const handleSell = async () => {
+    const amt = parseFloat(sellAmt);
+    if (!amt || amt <= 0) { toast.error("Введите количество MNK"); return; }
+    if (amt > mnkHoldings) { toast.error("Недостаточно MNK"); return; }
+    setBusy(true);
+    const r = await sell(amt);
+    if (r.success) {
+      toast.success(`Продано ${fmtMnk(amt)} MNK`, {
+        description: `Зачислено ${(amt * price).toLocaleString("ru", { maximumFractionDigits: 2 })} МР`,
+      });
+      setSellAmt("");
+      loadCards();
+    } else {
+      toast.error(r.error ?? "Ошибка сделки");
+    }
+    setBusy(false);
+  };
+
+  const handleResetCrash = () => {
+    crashShownRef.current = false;
+    setShowCrash(false);
+    resetCrash();
+    loadCards();
+    refreshHoldings();
+  };
+
+  // ── Lock screen ────────────────────────────────────────────────────────────
+  if (level < 15) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-5">
+        <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+          <Lock className="w-6 h-6 text-zinc-600" />
+        </div>
+        <div>
+          <h1 className="text-xl font-semibold text-white tracking-tight">Инвестиционный Портал</h1>
+          <p className="text-zinc-500 text-sm mt-1.5 max-w-xs leading-relaxed">
+            Торговля Маннрублём доступна с&nbsp;15&nbsp;уровня.
+          </p>
+        </div>
+        <div className="inline-flex items-center gap-2 px-3 py-1 border border-zinc-800 rounded text-[11px] font-mono text-zinc-600 uppercase tracking-widest">
+          <Lock className="w-2.5 h-2.5" />
+          Уровень 15 · Ваш уровень {level}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Trend icon ─────────────────────────────────────────────────────────────
+  const TrendIcon =
+    priceTrend === "up" ? TrendingUp :
+    priceTrend === "down" ? TrendingDown : Minus;
+  const trendColor =
+    priceTrend === "up" ? "text-emerald-400" :
+    priceTrend === "down" ? "text-red-400" : "text-zinc-500";
+
+  return (
+    <>
+      {/* ── Market Crash Overlay ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showCrash && (
           <motion.div
-            key="terminal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center py-10 space-y-8"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col items-center justify-center text-center p-6 select-none"
           >
-             <div className="w-24 h-24 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center relative">
-                <RefreshCw className="w-10 h-10 text-blue-500 animate-spin" />
-                <div className="absolute inset-0 bg-blue-500/5 animate-pulse rounded-xl" />
-             </div>
-
-             <div className="w-full max-w-md bg-black border border-zinc-800 rounded-lg p-6 font-mono text-[11px] space-y-1 shadow-2xl">
-               <div className="flex items-center gap-2 mb-4 border-b border-zinc-900 pb-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500" />
-                  <div className="w-2 h-2 rounded-full bg-amber-500" />
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-zinc-600 ml-2">mannru-core-v666.sh</span>
-               </div>
-               {terminalLogs.map((log, i) => (
-                 <motion.p
-                   key={i}
-                   initial={{ opacity: 0, x: -10 }}
-                   animate={{ opacity: 1, x: 0 }}
-                   className={log.startsWith(">>") ? "text-blue-400" : "text-zinc-500"}
-                 >
-                   {log}
-                 </motion.p>
-               ))}
-               <motion.div
-                 animate={{ opacity: [1, 0, 1] }}
-                 transition={{ repeat: Infinity, duration: 0.8 }}
-                 className="inline-block w-2 h-4 bg-zinc-700 align-middle ml-1"
-               />
-             </div>
-          </motion.div>
-        )}
-
-        {report && !revealing && (
-          <motion.div
-            key="report"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <div className="text-center space-y-2 mb-12">
-               <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-                  <Skull className="w-10 h-10 text-red-500" />
-               </div>
-               <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">Расплата наступила</h1>
-               <p className="text-zinc-500 font-mono text-xs italic">Все ваши действия были проанализированы.</p>
-            </div>
-
-            <Card className="bg-zinc-950 border-zinc-800 border-2 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-              <CardHeader className="bg-zinc-900 border-b border-zinc-800 flex flex-row items-center justify-between py-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-zinc-400">Финансовый Отчет №666</CardTitle>
-                </div>
-                <Badge variant="outline" className="border-red-500/50 text-red-500 text-[10px]">СТРОГО КОНФИДЕНЦИАЛЬНО</Badge>
-              </CardHeader>
-              <CardContent className="p-8 prose prose-invert max-w-none min-h-[300px]">
-                <div className="font-mono text-[13px] leading-relaxed whitespace-pre-wrap text-zinc-400">
-                  <TypewriterText text={report} />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl space-y-2">
-                <ShieldAlert className="w-6 h-6 text-red-500" />
-                <p className="text-[10px] text-zinc-500 uppercase font-bold">Статус</p>
-                <p className="text-lg font-bold text-white uppercase">В черном списке</p>
-              </div>
-              <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl space-y-2">
-                <AlertTriangle className="w-6 h-6 text-amber-500" />
-                <p className="text-[10px] text-zinc-500 uppercase font-bold">Последствия</p>
-                <p className="text-lg font-bold text-white uppercase">Лишение сна</p>
-              </div>
-              <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl space-y-2">
-                <TrendingUp className="w-6 h-6 text-blue-500" />
-                <p className="text-[10px] text-zinc-500 uppercase font-bold">Процент по долгу</p>
-                <p className="text-lg font-bold text-white uppercase">146% в секунду</p>
-              </div>
-            </div>
-
-            <div className="text-center pt-8">
-              <Button
-                variant="outline"
-                onClick={startReveal}
-                className="text-zinc-500 border-zinc-800 hover:bg-zinc-900 uppercase text-[10px] tracking-widest mr-4"
-              >
-                Пересчитать (за плату)
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setReport(null)}
-                className="uppercase text-[10px] tracking-widest px-8"
-              >
-                Я принимаю этот долг
-              </Button>
-            </div>
+            <div className="absolute inset-0 bg-red-900/8 pointer-events-none" />
+            <p className="text-red-700 font-mono text-[9px] uppercase tracking-[0.25em] mb-8">
+              MARKET.EXE // FATAL ERROR // EXIT CODE 0xDEAD
+            </p>
+            <h1 className="text-[15vw] sm:text-[120px] font-black text-white uppercase leading-none tracking-tighter mb-6 z-10">
+              КРАХ<br />МАРКЕТА
+            </h1>
+            <p className="text-red-500/80 font-mono text-xs mb-1.5 max-w-xs leading-relaxed z-10">
+              Курс MNK пробил отметку ₽100,000.
+            </p>
+            <p className="text-red-800 font-mono text-[10px] mb-10 z-10">
+              Все MNK-активы уничтожены. Биржа закрыта.
+            </p>
+            <button
+              onClick={handleResetCrash}
+              className="relative z-10 px-6 py-2.5 border border-zinc-800 text-zinc-400 font-mono text-[10px] uppercase tracking-[0.2em] hover:border-zinc-600 hover:text-zinc-200 active:bg-zinc-900 transition-colors rounded"
+            >
+              Восстановить систему
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+
+      {/* ── Main Content ────────────────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto">
+        {/* Header row */}
+        <div className="flex items-start justify-between mb-6 gap-4">
+          <div>
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-1">
+              Маннрубль · Биржа
+            </p>
+            <div className="flex items-baseline gap-2.5 flex-wrap">
+              <span
+                className={`text-3xl md:text-4xl font-bold tabular-nums tracking-tight transition-colors duration-200 ${
+                  priceTrend === "up" ? "text-emerald-400" :
+                  priceTrend === "down" ? "text-red-400" : "text-white"
+                }`}
+              >
+                {fmtPrice(price)}
+                <span className="text-zinc-600 text-lg font-normal ml-1">Р</span>
+              </span>
+              <span
+                className={`flex items-center gap-1 text-sm font-mono tabular-nums ${
+                  priceChangePercent >= 0 ? "text-emerald-500" : "text-red-500"
+                }`}
+              >
+                <TrendIcon className="w-3.5 h-3.5" />
+                {priceChangePercent >= 0 ? "+" : ""}
+                {priceChangePercent.toFixed(2)}%
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 border border-zinc-800 rounded bg-zinc-900 shrink-0 mt-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">MNK · live</span>
+          </div>
+        </div>
+
+        {/* Main panel */}
+        <div className="border border-zinc-800 rounded-lg overflow-hidden">
+          {/* Chart + Trade */}
+          <div className="divide-y lg:divide-y-0 lg:divide-x divide-zinc-800 lg:grid lg:grid-cols-3">
+            {/* Chart */}
+            <div className="lg:col-span-2 p-4 bg-zinc-950">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                  Свечной график · 10&thinsp;с / свеча
+                </span>
+                <span className="text-[10px] font-mono text-zinc-700">
+                  {candles.length + (currentCandle ? 1 : 0)} свечей
+                </span>
+              </div>
+              <div className="h-44 md:h-56">
+                <CandleChart candles={candles} currentCandle={currentCandle} price={price} />
+              </div>
+            </div>
+
+            {/* Trading panel */}
+            <div className="bg-zinc-950">
+              {/* Portfolio */}
+              <div className="p-4 border-b border-zinc-800">
+                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-3">
+                  Брокерский счёт
+                </p>
+                <p className="text-xl font-bold tabular-nums text-white">
+                  {fmtMnk(mnkHoldings)}
+                  <span className="text-zinc-600 text-sm font-normal ml-1">MNK</span>
+                </p>
+                <p className="text-sm text-zinc-500 mt-0.5 tabular-nums">
+                  ≈&nbsp;{mnkValue.toLocaleString("ru", { maximumFractionDigits: 2 })}&nbsp;МР
+                </p>
+                <div className="mt-3 pt-3 border-t border-zinc-800 flex justify-between text-xs">
+                  <span className="text-zinc-600">Баланс карт</span>
+                  <span className="text-zinc-400 tabular-nums font-mono">
+                    {totalBalance.toLocaleString("ru")}&nbsp;МР
+                  </span>
+                </div>
+              </div>
+
+              {/* Trade tabs */}
+              <div className="p-4">
+                <div className="flex rounded overflow-hidden border border-zinc-800 mb-4 text-[11px] font-bold uppercase tracking-widest">
+                  <button
+                    onClick={() => setTab("buy")}
+                    className={`flex-1 py-2 transition-colors ${
+                      tab === "buy"
+                        ? "bg-emerald-500/10 text-emerald-400"
+                        : "text-zinc-600 hover:text-zinc-300"
+                    } border-r border-zinc-800`}
+                  >
+                    Купить
+                  </button>
+                  <button
+                    onClick={() => setTab("sell")}
+                    className={`flex-1 py-2 transition-colors ${
+                      tab === "sell"
+                        ? "bg-red-500/10 text-red-400"
+                        : "text-zinc-600 hover:text-zinc-300"
+                    }`}
+                  >
+                    Продать
+                  </button>
+                </div>
+
+                {tab === "buy" && (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between mb-1.5">
+                        <label className="text-[10px] font-mono text-zinc-600 uppercase">Сумма&nbsp;МР</label>
+                        <button
+                          onClick={() => setBuyAmt(String(Math.floor(totalBalance)))}
+                          className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 uppercase transition-colors touch-manipulation"
+                        >
+                          Макс
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={buyAmt}
+                        onChange={(e) => setBuyAmt(e.target.value)}
+                        placeholder="0"
+                        min="0"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2.5 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-600 tabular-nums transition-colors"
+                      />
+                    </div>
+                    {buyPreview !== null && buyPreview > 0 && (
+                      <div className="flex justify-between text-xs px-0.5">
+                        <span className="text-zinc-600">Получите</span>
+                        <span className="text-zinc-300 tabular-nums font-mono">
+                          {fmtMnk(buyPreview)}&nbsp;MNK
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      onClick={handleBuy}
+                      disabled={busy || !buyAmt || parseFloat(buyAmt) <= 0}
+                      className="w-full py-2.5 border border-emerald-500/20 bg-emerald-500/8 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-500/30 active:bg-emerald-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded text-[11px] font-bold uppercase tracking-widest touch-manipulation"
+                    >
+                      {busy ? "Исполняем…" : "Купить MNK"}
+                    </button>
+                  </div>
+                )}
+
+                {tab === "sell" && (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between mb-1.5">
+                        <label className="text-[10px] font-mono text-zinc-600 uppercase">Количество&nbsp;MNK</label>
+                        <button
+                          onClick={() => setSellAmt(String(mnkHoldings))}
+                          className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 uppercase transition-colors touch-manipulation"
+                        >
+                          Макс
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={sellAmt}
+                        onChange={(e) => setSellAmt(e.target.value)}
+                        placeholder="0.000000"
+                        min="0"
+                        step="any"
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2.5 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-600 tabular-nums transition-colors"
+                      />
+                    </div>
+                    {sellPreview !== null && sellPreview > 0 && (
+                      <div className="flex justify-between text-xs px-0.5">
+                        <span className="text-zinc-600">Получите</span>
+                        <span className="text-zinc-300 tabular-nums font-mono">
+                          {sellPreview.toLocaleString("ru", { maximumFractionDigits: 2 })}&nbsp;МР
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      onClick={handleSell}
+                      disabled={busy || !sellAmt || parseFloat(sellAmt) <= 0 || mnkHoldings === 0}
+                      className="w-full py-2.5 border border-red-500/20 bg-red-500/8 text-red-400 hover:bg-red-500/15 hover:border-red-500/30 active:bg-red-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded text-[11px] font-bold uppercase tracking-widest touch-manipulation"
+                    >
+                      {busy ? "Исполняем…" : "Продать MNK"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer stats */}
+          <div className="grid grid-cols-3 divide-x divide-zinc-800 border-t border-zinc-800 bg-zinc-950">
+            <div className="px-4 py-3">
+              <p className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest">Тикер</p>
+              <p className="text-xs font-mono text-zinc-400 mt-0.5">MNK / РУБ</p>
+            </div>
+            <div className="px-4 py-3">
+              <p className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest">Нач. цена</p>
+              <p className="text-xs font-mono text-zinc-400 mt-0.5">0.1000&nbsp;Р</p>
+            </div>
+            <div className="px-4 py-3">
+              <p className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest">Порог краха</p>
+              <p className="text-xs font-mono text-red-800 mt-0.5">₽&nbsp;100&thinsp;000</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
