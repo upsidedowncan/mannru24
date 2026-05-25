@@ -52,8 +52,6 @@ function CandleChart({ candles, currentCandle, price }: ChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  // Tracks the Unix-second timestamp for the currently forming candle
-  const liveCandleTimeRef = useRef<number>(Math.floor(Date.now() / 1000));
 
   // Create chart once on mount
   useEffect(() => {
@@ -119,9 +117,6 @@ function CandleChart({ candles, currentCandle, price }: ChartProps) {
   // Sync historical candles when a new one is completed
   useEffect(() => {
     if (!seriesRef.current) return;
-    // Reset the live candle start time to now
-    liveCandleTimeRef.current = Math.floor(Date.now() / 1000);
-
     if (candles.length > 0) {
       const data = candles.map((c) => ({
         time: Math.floor(c.time / 1000) as Time,
@@ -140,7 +135,7 @@ function CandleChart({ candles, currentCandle, price }: ChartProps) {
   useEffect(() => {
     if (!seriesRef.current || !currentCandle) return;
     seriesRef.current.update({
-      time: liveCandleTimeRef.current as Time,
+      time: Math.floor(currentCandle.time / 1000) as Time,
       open: currentCandle.open,
       high: currentCandle.high,
       low: currentCandle.low,
@@ -177,7 +172,6 @@ export default function InvestmentsPage() {
     buy,
     sell,
     resetCrash,
-    refreshHoldings,
   } = useMarket();
 
   const [buyAmt, setBuyAmt] = useState("");
@@ -249,7 +243,6 @@ export default function InvestmentsPage() {
     setShowCrash(false);
     resetCrash();
     loadCards();
-    refreshHoldings();
   };
 
   // ── Lock screen ────────────────────────────────────────────────────────────

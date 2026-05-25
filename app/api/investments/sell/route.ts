@@ -55,6 +55,14 @@ export async function POST(req: NextRequest) {
     emojiCode: null,
   });
 
+  if (db.mnkMarket && !db.mnkMarket.crashed) {
+    const impact = mrAmount / (price * 10_000);
+    db.mnkMarket.basePrice = Math.max(
+      db.mnkMarket.basePrice * (1 - impact * 0.5),
+      0.001
+    );
+  }
+
   writeDb(db);
   return NextResponse.json({ mnkHoldings: user.mnkHoldings, mrReceived: mrAmount });
 }
