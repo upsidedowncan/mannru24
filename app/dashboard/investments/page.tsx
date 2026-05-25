@@ -1,11 +1,26 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useProgression } from "@/lib/progression";
-import { useMarket, type Candle, type CurrentCandle } from "@/lib/market";
+import {
+  createChart,
+  ColorType,
+  CrosshairMode,
+  type IChartApi,
+  type ISeriesApi,
+  type Time,
+} from "lightweight-charts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Lock, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useProgression } from "@/lib/progression";
+import { useMarket, type Candle, type CurrentCandle } from "@/lib/market";
 
 // ─── Price formatting ────────────────────────────────────────────────────────
 
@@ -25,9 +40,7 @@ function fmtMnk(n: number): string {
   return n.toFixed(6);
 }
 
-// ─── Candlestick Chart ────────────────────────────────────────────────────────
-
-const PAD = { t: 8, r: 56, b: 8, l: 2 };
+// ─── Candlestick chart using lightweight-charts ───────────────────────────────
 
 interface ChartProps {
   candles: Candle[];
@@ -37,150 +50,119 @@ interface ChartProps {
 
 function CandleChart({ candles, currentCandle, price }: ChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ w: 600, h: 200 });
+  const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  // Tracks the Unix-second timestamp for the currently forming candle
+  const liveCandleTimeRef = useRef<number>(Math.floor(Date.now() / 1000));
 
+  // Create chart once on mount
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const e = entries[0];
-      if (e) setDims({ w: e.contentRect.width, h: e.contentRect.height });
+
+    const chart = createChart(el, {
+      width: el.clientWidth,
+      height: el.clientHeight,
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#71717a",
+        fontSize: 11,
+      },
+      grid: {
+        vertLines: { color: "#27272a" },
+        horzLines: { color: "#27272a" },
+      },
+      crosshair: { mode: CrosshairMode.Normal },
+      rightPriceScale: {
+        borderColor: "#3f3f46",
+        scaleMargins: { top: 0.08, bottom: 0.08 },
+      },
+      timeScale: {
+        borderColor: "#3f3f46",
+        timeVisible: false,
+        secondsVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
+      },
+      handleScroll: true,
+      handleScale: false,
+    });
+
+    const series = chart.addCandlestickSeries({
+      upColor: "#22c55e",
+      downColor: "#ef4444",
+      borderUpColor: "#22c55e",
+      borderDownColor: "#ef4444",
+      wickUpColor: "#22c55e",
+      wickDownColor: "#ef4444",
+    });
+
+    chartRef.current = chart;
+    seriesRef.current = series;
+
+    const ro = new ResizeObserver(() => {
+      chartRef.current?.applyOptions({
+        width: el.clientWidth,
+        height: el.clientHeight,
+      });
     });
     ro.observe(el);
-    return () => ro.disconnect();
+
+    return () => {
+      ro.disconnect();
+      chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
+    };
   }, []);
 
-  type DisplayCandle = { open: number; high: number; low: number; close: number; live?: true };
+  // Sync historical candles when a new one is completed
+  useEffect(() => {
+    if (!seriesRef.current) return;
+    // Reset the live candle start time to now
+    liveCandleTimeRef.current = Math.floor(Date.now() / 1000);
 
-  const display: DisplayCandle[] = [
-    ...candles.slice(-50),
-    ...(currentCandle
-      ? [{ open: currentCandle.open, high: currentCandle.high, low: currentCandle.low, close: price, live: true as const }]
-      : []),
-  ];
+    if (candles.length > 0) {
+      const data = candles.map((c) => ({
+        time: Math.floor(c.time / 1000) as Time,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close,
+      }));
+      seriesRef.current.setData(data);
+      chartRef.current?.timeScale().scrollToRealTime();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candles.length]);
 
-  const plotW = dims.w - PAD.l - PAD.r;
-  const plotH = dims.h - PAD.t - PAD.b;
+  // Update the live (forming) candle on every price tick
+  useEffect(() => {
+    if (!seriesRef.current || !currentCandle) return;
+    seriesRef.current.update({
+      time: liveCandleTimeRef.current as Time,
+      open: currentCandle.open,
+      high: currentCandle.high,
+      low: currentCandle.low,
+      close: price,
+    });
+  }, [price, currentCandle]);
 
-  if (display.length === 0) {
+  if (candles.length === 0 && !currentCandle) {
     return (
       <div
         ref={containerRef}
-        className="w-full h-full flex items-center justify-center text-zinc-600 font-mono text-xs"
+        className="w-full h-full flex items-center justify-center text-muted-foreground font-mono text-xs"
       >
-        Инициализация рынка...
+        Инициализация рынка…
       </div>
     );
   }
 
-  const allV = display.flatMap((c) => [c.high, c.low]);
-  const rawMin = Math.min(...allV);
-  const rawMax = Math.max(...allV);
-  const range = rawMax - rawMin || rawMax * 0.2;
-  const yMin = rawMin - range * 0.06;
-  const yMax = rawMax + range * 0.06;
-
-  const n = display.length;
-  const cw = plotW / n;
-  const bw = Math.max(1.5, cw * 0.56);
-
-  const sy = (v: number) => PAD.t + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
-  const sx = (i: number) => PAD.l + (i + 0.5) * cw;
-
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({
-    price: yMin + (yMax - yMin) * t,
-    y: sy(yMin + (yMax - yMin) * t),
-  }));
-
-  return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={dims.w} height={dims.h} style={{ display: "block" }}>
-        {/* Grid lines */}
-        {yTicks.map(({ y }, i) => (
-          <line
-            key={i}
-            x1={PAD.l}
-            y1={y}
-            x2={dims.w - PAD.r}
-            y2={y}
-            stroke="#27272a"
-            strokeWidth="0.5"
-          />
-        ))}
-
-        {/* Y axis labels */}
-        {yTicks.map(({ price: p, y }, i) => (
-          <text
-            key={i}
-            x={dims.w - PAD.r + 4}
-            y={y}
-            fill="#52525b"
-            fontSize="9"
-            fontFamily="monospace"
-            dominantBaseline="middle"
-          >
-            {fmtPrice(p)}
-          </text>
-        ))}
-
-        {/* Current price dashed line */}
-        <line
-          x1={PAD.l}
-          y1={sy(price)}
-          x2={dims.w - PAD.r}
-          y2={sy(price)}
-          stroke="#3f3f46"
-          strokeWidth="0.5"
-          strokeDasharray="4,3"
-        />
-
-        {/* Candles */}
-        {display.map((c, i) => {
-          const isGreen = c.close >= c.open;
-          const clr = isGreen ? "#22c55e" : "#ef4444";
-          const x = sx(i);
-          const bodyTop = sy(Math.max(c.open, c.close));
-          const bodyBot = sy(Math.min(c.open, c.close));
-          const bh = Math.max(1, bodyBot - bodyTop);
-
-          return (
-            <g key={i} opacity={c.live ? 0.7 : 1}>
-              <line
-                x1={x}
-                y1={sy(c.high)}
-                x2={x}
-                y2={sy(c.low)}
-                stroke={clr}
-                strokeWidth="0.8"
-              />
-              <rect
-                x={x - bw / 2}
-                y={bodyTop}
-                width={bw}
-                height={bh}
-                fill={isGreen ? "#22c55e33" : "#ef444433"}
-                stroke={clr}
-                strokeWidth="0.5"
-              />
-            </g>
-          );
-        })}
-
-        {/* Live dot on current candle */}
-        {currentCandle && n > 0 && (
-          <circle
-            cx={sx(n - 1)}
-            cy={sy(price)}
-            r="2.5"
-            fill="#22d3ee"
-          />
-        )}
-      </svg>
-    </div>
-  );
+  return <div ref={containerRef} className="w-full h-full" />;
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function InvestmentsPage() {
   const { level } = useProgression();
@@ -198,7 +180,6 @@ export default function InvestmentsPage() {
     refreshHoldings,
   } = useMarket();
 
-  const [tab, setTab] = useState<"buy" | "sell">("buy");
   const [buyAmt, setBuyAmt] = useState("");
   const [sellAmt, setSellAmt] = useState("");
   const [busy, setBusy] = useState(false);
@@ -230,7 +211,7 @@ export default function InvestmentsPage() {
   const handleBuy = async () => {
     const amt = parseFloat(buyAmt);
     if (!amt || amt <= 0) { toast.error("Введите сумму"); return; }
-    if (amt > totalBalance) { toast.error("Недостаточно средств"); return; }
+    if (amt > totalBalance) { toast.error("Недостаточно средств на карте"); return; }
     setBusy(true);
     const r = await buy(amt);
     if (r.success) {
@@ -275,30 +256,31 @@ export default function InvestmentsPage() {
   if (level < 15) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-5">
-        <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-          <Lock className="w-6 h-6 text-zinc-600" />
+        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+          <Lock className="w-6 h-6 text-muted-foreground" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-white tracking-tight">Инвестиционный Портал</h1>
-          <p className="text-zinc-500 text-sm mt-1.5 max-w-xs leading-relaxed">
+          <h1 className="text-xl font-semibold tracking-tight">Инвестиционный Портал</h1>
+          <p className="text-muted-foreground text-sm mt-1.5 max-w-xs leading-relaxed">
             Торговля Маннрублём доступна с&nbsp;15&nbsp;уровня.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1 border border-zinc-800 rounded text-[11px] font-mono text-zinc-600 uppercase tracking-widest">
-          <Lock className="w-2.5 h-2.5" />
+        <Badge variant="outline" className="font-mono text-[11px]">
+          <Lock className="w-2.5 h-2.5 mr-1.5" />
           Уровень 15 · Ваш уровень {level}
-        </div>
+        </Badge>
       </div>
     );
   }
 
-  // ── Trend icon ─────────────────────────────────────────────────────────────
   const TrendIcon =
     priceTrend === "up" ? TrendingUp :
     priceTrend === "down" ? TrendingDown : Minus;
   const trendColor =
     priceTrend === "up" ? "text-emerald-400" :
-    priceTrend === "down" ? "text-red-400" : "text-zinc-500";
+    priceTrend === "down" ? "text-red-400" : "text-foreground";
+  const changeColor =
+    priceChangePercent >= 0 ? "text-emerald-500" : "text-red-500";
 
   return (
     <>
@@ -312,230 +294,215 @@ export default function InvestmentsPage() {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] bg-zinc-950 flex flex-col items-center justify-center text-center p-6 select-none"
           >
-            <div className="absolute inset-0 bg-red-900/8 pointer-events-none" />
-            <p className="text-red-700 font-mono text-[9px] uppercase tracking-[0.25em] mb-8">
+            <p className="text-red-800 font-mono text-[9px] uppercase tracking-[0.25em] mb-8">
               MARKET.EXE // FATAL ERROR // EXIT CODE 0xDEAD
             </p>
-            <h1 className="text-[15vw] sm:text-[120px] font-black text-white uppercase leading-none tracking-tighter mb-6 z-10">
+            <h1 className="text-[14vw] sm:text-[110px] font-black text-white uppercase leading-none tracking-tighter mb-6">
               КРАХ<br />МАРКЕТА
             </h1>
-            <p className="text-red-500/80 font-mono text-xs mb-1.5 max-w-xs leading-relaxed z-10">
+            <p className="text-red-500/80 font-mono text-xs mb-1.5 max-w-xs leading-relaxed">
               Курс MNK пробил отметку ₽100,000.
             </p>
-            <p className="text-red-800 font-mono text-[10px] mb-10 z-10">
+            <p className="text-red-800 font-mono text-[10px] mb-10">
               Все MNK-активы уничтожены. Биржа закрыта.
             </p>
-            <button
-              onClick={handleResetCrash}
-              className="relative z-10 px-6 py-2.5 border border-zinc-800 text-zinc-400 font-mono text-[10px] uppercase tracking-[0.2em] hover:border-zinc-600 hover:text-zinc-200 active:bg-zinc-900 transition-colors rounded"
-            >
+            <Button variant="outline" onClick={handleResetCrash}>
               Восстановить систему
-            </button>
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ── Main Content ────────────────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto">
-        {/* Header row */}
-        <div className="flex items-start justify-between mb-6 gap-4">
+      <div className="max-w-5xl mx-auto space-y-4">
+
+        {/* Price header */}
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-1">
+            <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">
               Маннрубль · Биржа
             </p>
-            <div className="flex items-baseline gap-2.5 flex-wrap">
-              <span
-                className={`text-3xl md:text-4xl font-bold tabular-nums tracking-tight transition-colors duration-200 ${
-                  priceTrend === "up" ? "text-emerald-400" :
-                  priceTrend === "down" ? "text-red-400" : "text-white"
-                }`}
-              >
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className={`text-3xl md:text-4xl font-bold tabular-nums tracking-tight ${trendColor}`}>
                 {fmtPrice(price)}
-                <span className="text-zinc-600 text-lg font-normal ml-1">Р</span>
+                <span className="text-muted-foreground text-xl font-normal ml-1.5">Р</span>
               </span>
-              <span
-                className={`flex items-center gap-1 text-sm font-mono tabular-nums ${
-                  priceChangePercent >= 0 ? "text-emerald-500" : "text-red-500"
-                }`}
-              >
+              <span className={`flex items-center gap-1 text-sm font-mono tabular-nums ${changeColor}`}>
                 <TrendIcon className="w-3.5 h-3.5" />
-                {priceChangePercent >= 0 ? "+" : ""}
-                {priceChangePercent.toFixed(2)}%
+                {priceChangePercent >= 0 ? "+" : ""}{priceChangePercent.toFixed(2)}%
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 border border-zinc-800 rounded bg-zinc-900 shrink-0 mt-1">
+          <Badge variant="outline" className="font-mono text-[10px] shrink-0 mt-1 gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">MNK · live</span>
-          </div>
+            MNK · LIVE
+          </Badge>
         </div>
 
-        {/* Main panel */}
-        <div className="border border-zinc-800 rounded-lg overflow-hidden">
-          {/* Chart + Trade */}
-          <div className="divide-y lg:divide-y-0 lg:divide-x divide-zinc-800 lg:grid lg:grid-cols-3">
-            {/* Chart */}
-            <div className="lg:col-span-2 p-4 bg-zinc-950">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                  Свечной график · 10&thinsp;с / свеча
-                </span>
-                <span className="text-[10px] font-mono text-zinc-700">
-                  {candles.length + (currentCandle ? 1 : 0)} свечей
+        {/* Chart + Trading panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* Chart card */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium">
+                  График MNK / РУБ
+                </CardTitle>
+                <span className="text-xs text-muted-foreground font-mono">
+                  {candles.length + (currentCandle ? 1 : 0)} свечей · 10&thinsp;с
                 </span>
               </div>
-              <div className="h-44 md:h-56">
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="h-48 md:h-60 w-full">
                 <CandleChart candles={candles} currentCandle={currentCandle} price={price} />
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {/* Trading panel */}
-            <div className="bg-zinc-950">
-              {/* Portfolio */}
-              <div className="p-4 border-b border-zinc-800">
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest mb-3">
-                  Брокерский счёт
-                </p>
-                <p className="text-xl font-bold tabular-nums text-white">
+          {/* Trading card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Брокерский счёт</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Portfolio stats */}
+              <div>
+                <p className="text-2xl font-bold tabular-nums">
                   {fmtMnk(mnkHoldings)}
-                  <span className="text-zinc-600 text-sm font-normal ml-1">MNK</span>
+                  <span className="text-muted-foreground text-base font-normal ml-1.5">MNK</span>
                 </p>
-                <p className="text-sm text-zinc-500 mt-0.5 tabular-nums">
+                <p className="text-sm text-muted-foreground mt-0.5 tabular-nums">
                   ≈&nbsp;{mnkValue.toLocaleString("ru", { maximumFractionDigits: 2 })}&nbsp;МР
                 </p>
-                <div className="mt-3 pt-3 border-t border-zinc-800 flex justify-between text-xs">
-                  <span className="text-zinc-600">Баланс карт</span>
-                  <span className="text-zinc-400 tabular-nums font-mono">
-                    {totalBalance.toLocaleString("ru")}&nbsp;МР
-                  </span>
-                </div>
               </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Баланс карт</span>
+                <span className="tabular-nums font-medium">
+                  {totalBalance.toLocaleString("ru")}&nbsp;МР
+                </span>
+              </div>
+
+              <Separator />
 
               {/* Trade tabs */}
-              <div className="p-4">
-                <div className="flex rounded overflow-hidden border border-zinc-800 mb-4 text-[11px] font-bold uppercase tracking-widest">
-                  <button
-                    onClick={() => setTab("buy")}
-                    className={`flex-1 py-2 transition-colors ${
-                      tab === "buy"
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : "text-zinc-600 hover:text-zinc-300"
-                    } border-r border-zinc-800`}
-                  >
-                    Купить
-                  </button>
-                  <button
-                    onClick={() => setTab("sell")}
-                    className={`flex-1 py-2 transition-colors ${
-                      tab === "sell"
-                        ? "bg-red-500/10 text-red-400"
-                        : "text-zinc-600 hover:text-zinc-300"
-                    }`}
-                  >
-                    Продать
-                  </button>
-                </div>
+              <Tabs defaultValue="buy" className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="buy" className="flex-1">Купить</TabsTrigger>
+                  <TabsTrigger value="sell" className="flex-1">Продать</TabsTrigger>
+                </TabsList>
 
-                {tab === "buy" && (
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between mb-1.5">
-                        <label className="text-[10px] font-mono text-zinc-600 uppercase">Сумма&nbsp;МР</label>
-                        <button
-                          onClick={() => setBuyAmt(String(Math.floor(totalBalance)))}
-                          className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 uppercase transition-colors touch-manipulation"
-                        >
-                          Макс
-                        </button>
-                      </div>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={buyAmt}
-                        onChange={(e) => setBuyAmt(e.target.value)}
-                        placeholder="0"
-                        min="0"
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2.5 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-600 tabular-nums transition-colors"
-                      />
+                <TabsContent value="buy" className="space-y-3 mt-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="buy-amount" className="text-xs text-muted-foreground">
+                        Сумма&nbsp;МР
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => setBuyAmt(String(Math.floor(totalBalance)))}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono uppercase"
+                      >
+                        Макс
+                      </button>
                     </div>
+                    <Input
+                      id="buy-amount"
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="0"
+                      min="0"
+                      value={buyAmt}
+                      onChange={(e) => setBuyAmt(e.target.value)}
+                    />
                     {buyPreview !== null && buyPreview > 0 && (
-                      <div className="flex justify-between text-xs px-0.5">
-                        <span className="text-zinc-600">Получите</span>
-                        <span className="text-zinc-300 tabular-nums font-mono">
-                          {fmtMnk(buyPreview)}&nbsp;MNK
-                        </span>
-                      </div>
+                      <p className="text-xs text-muted-foreground flex justify-between">
+                        <span>Получите</span>
+                        <span className="font-mono text-foreground">{fmtMnk(buyPreview)}&nbsp;MNK</span>
+                      </p>
                     )}
-                    <button
-                      onClick={handleBuy}
-                      disabled={busy || !buyAmt || parseFloat(buyAmt) <= 0}
-                      className="w-full py-2.5 border border-emerald-500/20 bg-emerald-500/8 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-500/30 active:bg-emerald-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded text-[11px] font-bold uppercase tracking-widest touch-manipulation"
-                    >
-                      {busy ? "Исполняем…" : "Купить MNK"}
-                    </button>
                   </div>
-                )}
+                  <Button
+                    variant="emerald"
+                    className="w-full"
+                    onClick={handleBuy}
+                    disabled={busy || !buyAmt || parseFloat(buyAmt) <= 0}
+                  >
+                    {busy ? "Исполняем…" : "Купить MNK"}
+                  </Button>
+                </TabsContent>
 
-                {tab === "sell" && (
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between mb-1.5">
-                        <label className="text-[10px] font-mono text-zinc-600 uppercase">Количество&nbsp;MNK</label>
-                        <button
-                          onClick={() => setSellAmt(String(mnkHoldings))}
-                          className="text-[10px] font-mono text-zinc-600 hover:text-zinc-300 uppercase transition-colors touch-manipulation"
-                        >
-                          Макс
-                        </button>
-                      </div>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={sellAmt}
-                        onChange={(e) => setSellAmt(e.target.value)}
-                        placeholder="0.000000"
-                        min="0"
-                        step="any"
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2.5 text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-600 tabular-nums transition-colors"
-                      />
+                <TabsContent value="sell" className="space-y-3 mt-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="sell-amount" className="text-xs text-muted-foreground">
+                        Количество&nbsp;MNK
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => setSellAmt(String(mnkHoldings))}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono uppercase"
+                      >
+                        Макс
+                      </button>
                     </div>
+                    <Input
+                      id="sell-amount"
+                      type="number"
+                      inputMode="decimal"
+                      placeholder="0.000000"
+                      min="0"
+                      step="any"
+                      value={sellAmt}
+                      onChange={(e) => setSellAmt(e.target.value)}
+                    />
                     {sellPreview !== null && sellPreview > 0 && (
-                      <div className="flex justify-between text-xs px-0.5">
-                        <span className="text-zinc-600">Получите</span>
-                        <span className="text-zinc-300 tabular-nums font-mono">
+                      <p className="text-xs text-muted-foreground flex justify-between">
+                        <span>Получите</span>
+                        <span className="font-mono text-foreground">
                           {sellPreview.toLocaleString("ru", { maximumFractionDigits: 2 })}&nbsp;МР
                         </span>
-                      </div>
+                      </p>
                     )}
-                    <button
-                      onClick={handleSell}
-                      disabled={busy || !sellAmt || parseFloat(sellAmt) <= 0 || mnkHoldings === 0}
-                      className="w-full py-2.5 border border-red-500/20 bg-red-500/8 text-red-400 hover:bg-red-500/15 hover:border-red-500/30 active:bg-red-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded text-[11px] font-bold uppercase tracking-widest touch-manipulation"
-                    >
-                      {busy ? "Исполняем…" : "Продать MNK"}
-                    </button>
                   </div>
-                )}
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleSell}
+                    disabled={busy || !sellAmt || parseFloat(sellAmt) <= 0 || mnkHoldings === 0}
+                  >
+                    {busy ? "Исполняем…" : "Продать MNK"}
+                  </Button>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Footer stats */}
+        <Card>
+          <CardContent className="py-3 px-6">
+            <div className="flex items-center justify-around gap-2">
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Тикер</p>
+                <p className="text-sm font-mono font-medium mt-0.5">MNK / РУБ</p>
+              </div>
+              <Separator orientation="vertical" className="h-8" />
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Нач. цена</p>
+                <p className="text-sm font-mono font-medium mt-0.5">0.1000&nbsp;Р</p>
+              </div>
+              <Separator orientation="vertical" className="h-8" />
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">Порог краха</p>
+                <p className="text-sm font-mono font-medium text-red-500 mt-0.5">₽&nbsp;100&thinsp;000</p>
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Footer stats */}
-          <div className="grid grid-cols-3 divide-x divide-zinc-800 border-t border-zinc-800 bg-zinc-950">
-            <div className="px-4 py-3">
-              <p className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest">Тикер</p>
-              <p className="text-xs font-mono text-zinc-400 mt-0.5">MNK / РУБ</p>
-            </div>
-            <div className="px-4 py-3">
-              <p className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest">Нач. цена</p>
-              <p className="text-xs font-mono text-zinc-400 mt-0.5">0.1000&nbsp;Р</p>
-            </div>
-            <div className="px-4 py-3">
-              <p className="text-[9px] font-mono text-zinc-700 uppercase tracking-widest">Порог краха</p>
-              <p className="text-xs font-mono text-red-800 mt-0.5">₽&nbsp;100&thinsp;000</p>
-            </div>
-          </div>
-        </div>
       </div>
     </>
   );
