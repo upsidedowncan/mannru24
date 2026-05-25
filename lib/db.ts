@@ -74,6 +74,7 @@ export interface UserProfile {
   level: number;
   xp: number;
   clickHistory: ClickRecord[];
+  mnkHoldings?: number;
 }
 
 export interface OAuthApp {

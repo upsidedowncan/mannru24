@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ProgressionProvider } from "@/lib/progression";
+import { MarketProvider } from "@/lib/market";
 import { LevelUpDialog } from "@/components/LevelUpDialog";
 
 const geistSans = Geist({
@@ -31,8 +32,10 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground antialiased">
         <ProgressionProvider>
-          {children}
-          <LevelUpDialog />
+          <MarketProvider>
+            {children}
+            <LevelUpDialog />
+          </MarketProvider>
         </ProgressionProvider>
       </body>
     </html>
