@@ -1,11 +1,21 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 
 interface LevelUpEvent {
   newLevel: number;
   unlockedPages: string[];
   unlockedTiers: string[];
+}
+
+interface PreviewUser {
+  id: string;
+  name: string;
+  level: number;
+  xp: number;
+  currentXp: number;
+  nextXp: number;
+  bonusBalance: number;
 }
 
 interface ProgressionContextType {
@@ -14,10 +24,15 @@ interface ProgressionContextType {
   currentXp: number;
   nextXp: number;
   levelUps: LevelUpEvent[];
+  isReadOnly: boolean;
+  previewUser: PreviewUser | null;
+  isBanned: boolean;
   addXp: (amount: number) => Promise<void>;
   triggerLevelUps: (levelUps: number[], level: number, xp: number, currentXp: number, nextXp: number) => void;
   clearLevelUps: () => void;
   refresh: () => Promise<void>;
+  enterPreview: (userData: PreviewUser) => void;
+  exitPreview: () => void;
 }
 
 const ProgressionContext = createContext<ProgressionContextType | null>(null);
@@ -28,15 +43,36 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
   const [currentXp, setCurrentXp] = useState(0);
   const [nextXp, setNextXp] = useState(5);
   const [levelUps, setLevelUps] = useState<LevelUpEvent[]>([]);
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [previewUser, setPreviewUser] = useState<PreviewUser | null>(null);
+  const [isBanned, setIsBanned] = useState(false);
+
+  // Store admin's own data to restore on exit
+  const adminData = useRef<{ level: number; xp: number; currentXp: number; nextXp: number } | null>(null);
 
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/user");
-    const data = await res.json();
-    setLevel(data.level);
-    setXp(data.xp);
-    setCurrentXp(data.currentXp);
-    setNextXp(data.nextXp);
-  }, []);
+    try {
+      const res = await fetch("/api/user");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.isBanned) {
+        setIsBanned(true);
+        // Clear session so they can't navigate back
+        fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        return;
+      }
+      adminData.current = { level: data.level, xp: data.xp, currentXp: data.currentXp, nextXp: data.nextXp };
+      // Only update displayed data if not in preview mode
+      if (!isReadOnly) {
+        setLevel(data.level);
+        setXp(data.xp);
+        setCurrentXp(data.currentXp);
+        setNextXp(data.nextXp);
+      }
+    } catch {
+      // ignore
+    }
+  }, [isReadOnly]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -52,10 +88,13 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ xpAdd: amount }),
     });
     const data = await res.json();
-    setLevel(data.level);
-    setXp(data.xp);
-    setCurrentXp(data.currentXp);
-    setNextXp(data.nextXp);
+    if (!isReadOnly) {
+      setLevel(data.level);
+      setXp(data.xp);
+      setCurrentXp(data.currentXp);
+      setNextXp(data.nextXp);
+    }
+    adminData.current = { level: data.level, xp: data.xp, currentXp: data.currentXp, nextXp: data.nextXp };
     if (data.levelUps?.length) {
       const newUps: LevelUpEvent[] = data.levelUps.map((lvl: number) => ({
         newLevel: lvl,
@@ -64,15 +103,18 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
       }));
       setLevelUps((prev) => [...prev, ...newUps]);
     }
-  }, []);
+  }, [isReadOnly]);
 
   const clearLevelUps = useCallback(() => setLevelUps([]), []);
 
   const triggerLevelUps = useCallback((levelUps: number[], newLevel: number, newXp: number, newCurrentXp: number, newNextXp: number) => {
-    setLevel(newLevel);
-    setXp(newXp);
-    setCurrentXp(newCurrentXp);
-    setNextXp(newNextXp);
+    adminData.current = { level: newLevel, xp: newXp, currentXp: newCurrentXp, nextXp: newNextXp };
+    if (!isReadOnly) {
+      setLevel(newLevel);
+      setXp(newXp);
+      setCurrentXp(newCurrentXp);
+      setNextXp(newNextXp);
+    }
     if (levelUps?.length) {
       const newUps: LevelUpEvent[] = levelUps.map((lvl: number) => ({
         newLevel: lvl,
@@ -81,10 +123,35 @@ export function ProgressionProvider({ children }: { children: ReactNode }) {
       }));
       setLevelUps((prev) => [...prev, ...newUps]);
     }
+  }, [isReadOnly]);
+
+  const enterPreview = useCallback((userData: PreviewUser) => {
+    setPreviewUser(userData);
+    setIsReadOnly(true);
+    setLevel(userData.level);
+    setXp(userData.xp);
+    setCurrentXp(userData.currentXp);
+    setNextXp(userData.nextXp);
+  }, []);
+
+  const exitPreview = useCallback(() => {
+    setPreviewUser(null);
+    setIsReadOnly(false);
+    if (adminData.current) {
+      setLevel(adminData.current.level);
+      setXp(adminData.current.xp);
+      setCurrentXp(adminData.current.currentXp);
+      setNextXp(adminData.current.nextXp);
+    }
   }, []);
 
   return (
-    <ProgressionContext.Provider value={{ level, xp, currentXp, nextXp, levelUps, addXp, triggerLevelUps, clearLevelUps, refresh }}>
+    <ProgressionContext.Provider value={{
+      level, xp, currentXp, nextXp, levelUps,
+      isReadOnly, previewUser, isBanned,
+      addXp, triggerLevelUps, clearLevelUps, refresh,
+      enterPreview, exitPreview,
+    }}>
       {children}
     </ProgressionContext.Provider>
   );

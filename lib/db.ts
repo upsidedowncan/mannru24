@@ -31,6 +31,7 @@ export interface Transaction {
   date: string;
   cardId?: string;
   emojiCode?: string | null;
+  source?: string;
 }
 
 export interface Task {
@@ -75,6 +76,8 @@ export interface UserProfile {
   xp: number;
   clickHistory: ClickRecord[];
   mnkHoldings?: number;
+  isBanned?: boolean;
+  bannedReason?: string;
 }
 
 export interface OAuthApp {

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Card as CardType, Transaction, UserProfile } from "@/lib/db";
+import { useProgression } from "@/lib/progression";
 
 export default function DashboardPage() {
   const [cards, setCards] = useState<CardType[]>([]);
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { isReadOnly } = useProgression();
 
   const fetchData = async () => {
     setLoading(true);
@@ -56,7 +58,7 @@ export default function DashboardPage() {
   const totalBalance = cards.reduce((sum, c) => sum + c.balance, 0);
 
   const claimDaily = async () => {
-    if (dailyClaiming || cards.length === 0) return;
+    if (dailyClaiming || cards.length === 0 || isReadOnly) return;
     setDailyClaiming(true);
     try {
       // Satirical daily reward: random small amount
@@ -116,7 +118,7 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-semibold tracking-tight">Главная</h1>
             <p className="text-muted-foreground text-sm mt-1">Добро пожаловать, {user?.name || "пользователь"}</p>
           </div>
-          <CreateCardDialog onCreated={fetchData} existingCards={cards.map((c) => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${c.tier} ••${c.number.slice(-4)}` }))} />
+          {!isReadOnly && <CreateCardDialog onCreated={fetchData} existingCards={cards.map((c) => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${c.tier} ••${c.number.slice(-4)}` }))} />}
         </div>
 
         {cards.length > 0 ? (
@@ -133,7 +135,7 @@ export default function DashboardPage() {
               <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4"><CreditCard className="w-8 h-8 text-muted-foreground" /></div>
               <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
               <p className="text-muted-foreground text-sm mb-4">Создайте свою первую карту и получите 1 000 МР</p>
-              <CreateCardDialog onCreated={fetchData} existingCards={[]} />
+              {!isReadOnly && <CreateCardDialog onCreated={fetchData} existingCards={[]} />}
             </CardContent>
           </Card>
         )}

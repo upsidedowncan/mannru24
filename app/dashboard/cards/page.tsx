@@ -15,6 +15,7 @@ import { Check, CreditCard, Trash2, ChevronLeft, ChevronRight } from "lucide-rea
 import type { Card as CardType, CardTier } from "@/lib/db";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useProgression } from "@/lib/progression";
 
 const tierOrder: CardTier[] = ["bronze", "silver", "gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
 
@@ -32,7 +33,7 @@ const tierInfo = [
   { tier: "obsidian" as const, name: "Obsidian", features: ["Всё из Black", "Кэшбэк 15% на все покупки", "Максимальные лимиты", "Приглашения на закрытые события", "Полная финансовая свобода"] },
 ];
 
-function TariffCarousel({ onSelect, existingCards }: { onSelect: () => void, existingCards: any[] }) {
+function TariffCarousel({ onSelect, existingCards, isReadOnly }: { onSelect: () => void, existingCards: any[], isReadOnly?: boolean }) {
   const [index, setIndex] = useState(0);
 
   const next = () => setIndex((prev) => (prev + 1) % tierInfo.length);
@@ -100,9 +101,11 @@ function TariffCarousel({ onSelect, existingCards }: { onSelect: () => void, exi
                   >
                     <h3 className="text-xl font-bold text-white uppercase tracking-widest">{tierMeta[tier.tier].label}</h3>
                     <p className="text-blue-400 text-sm font-mono">{tierMeta[tier.tier].price}</p>
-                    <div className="pt-2 pointer-events-auto">
-                      <CreateCardDialog onCreated={onSelect} existingCards={existingCards} />
-                    </div>
+                    {!isReadOnly && (
+                      <div className="pt-2 pointer-events-auto">
+                        <CreateCardDialog onCreated={onSelect} existingCards={existingCards} />
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -119,6 +122,7 @@ export default function CardsPage() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const router = useRouter();
+  const { isReadOnly } = useProgression();
 
   const fetchCards = async () => {
     setLoading(true);
@@ -179,20 +183,24 @@ export default function CardsPage() {
                     expiry={card.expiry}
                     emojiCode={card.emojiCode}
                   />
-                  <div className="absolute top-2 right-2 flex gap-1">
-                    <UpgradeCardDialog card={card} allCards={cardLabels} onUpgraded={fetchCards} />
-                    <button
-                      onClick={() => setDeleteId(card.id)}
-                      className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {!isReadOnly && (
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <UpgradeCardDialog card={card} allCards={cardLabels} onUpgraded={fetchCards} />
+                      <button
+                        onClick={() => setDeleteId(card.id)}
+                        className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
-              <div className="aspect-[1.586/1] border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center group hover:border-zinc-700 transition-colors cursor-pointer">
-                 <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
-              </div>
+              {!isReadOnly && (
+                <div className="aspect-[1.586/1] border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center group hover:border-zinc-700 transition-colors cursor-pointer">
+                  <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
+                </div>
+              )}
             </div>
           ) : (
             <Card className="bg-zinc-950 border-zinc-900">
@@ -202,14 +210,14 @@ export default function CardsPage() {
                 </div>
                 <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
                 <p className="text-zinc-500 text-sm mb-4">Выберите подходящий тариф и начните тратить воображаемые деньги.</p>
-                <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
+                {!isReadOnly && <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />}
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
         <TabsContent value="tariffs" className="mt-6 border-none p-0">
-          <TariffCarousel onSelect={fetchCards} existingCards={cardLabels} />
+          <TariffCarousel onSelect={fetchCards} existingCards={cardLabels} isReadOnly={isReadOnly} />
 
           <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
              {tierInfo.slice(0, 3).map(t => (

@@ -72,3 +72,38 @@ export async function POST(req: Request) {
   writeDb(db);
   return NextResponse.json({ success: true, user, ...DEV_ROLE }, { headers: corsHeaders });
 }
+
+export async function PATCH(req: Request) {
+  const corsHeaders = getCorsHeaders(req);
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+  }
+
+  const db = readDb();
+  const requestingUser = db.users.find(u => u.id === session.user.id);
+  if (!requestingUser || requestingUser.id !== DEV_UUID) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: corsHeaders });
+  }
+
+  const body = await req.json();
+  const { action, userId, reason } = body;
+
+  const targetUser = db.users.find(u => u.id === userId);
+  if (!targetUser) {
+    return NextResponse.json({ error: "User not found" }, { status: 404, headers: corsHeaders });
+  }
+
+  if (action === "ban") {
+    targetUser.isBanned = true;
+    targetUser.bannedReason = reason || "Нарушение правил коалиции MANNHAXORS";
+  } else if (action === "unban") {
+    targetUser.isBanned = false;
+    targetUser.bannedReason = undefined;
+  } else {
+    return NextResponse.json({ error: "Invalid action" }, { status: 400, headers: corsHeaders });
+  }
+
+  writeDb(db);
+  return NextResponse.json({ success: true, user: { id: targetUser.id, name: targetUser.name, isBanned: targetUser.isBanned } }, { headers: corsHeaders });
+}
