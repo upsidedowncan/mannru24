@@ -7,6 +7,7 @@ import { MobileNavbar } from "@/components/MobileNavbar";
 import { NewbieGuide } from "@/components/NewbieGuide";
 import { LevelUpDialog } from "@/components/LevelUpDialog";
 import { DevPanel } from "@/components/DevPanel";
+import { KurbanPopup } from "@/components/KurbanPopup";
 
 export default function DashboardLayout({
   children,
@@ -50,6 +51,7 @@ export default function DashboardLayout({
       <MobileNavbar />
       <NewbieGuide />
       <LevelUpDialog />
+      <KurbanPopup />
       <DevPanel />
     </div>
   );
