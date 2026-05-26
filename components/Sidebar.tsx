@@ -12,6 +12,7 @@ import {
   History,
   Settings,
   LogOut,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Lock,
@@ -21,6 +22,7 @@ import { Progress } from "@/components/ui/progress";
 import { useProgression } from "@/lib/progression";
 import { pageUnlockLevel } from "@/lib/constants";
 import { useRouter } from "next/navigation";
+import { isEventActive } from "@/lib/events";
 
 const navItems = [
   { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
@@ -37,6 +39,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { level, xp, currentXp, nextXp } = useProgression();
+  const kurbanActive = isEventActive("kurban");
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -76,6 +79,19 @@ export function Sidebar() {
       )}
 
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {kurbanActive && (
+          <Link
+            href="/dashboard/event"
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+              pathname === "/dashboard/event"
+                ? "bg-emerald-500/10 text-emerald-500 font-medium border border-emerald-500/20"
+                : "text-emerald-500/70 hover:text-emerald-500 hover:bg-emerald-500/5"
+            }`}
+          >
+            <Moon className="w-4 h-4 flex-shrink-0 fill-emerald-500/20" />
+            {!collapsed && <span className="truncate">Курбан-байрам</span>}
+          </Link>
+        )}
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const requiredLevel = pageUnlockLevel[item.href] || 1;
