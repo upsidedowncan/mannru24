@@ -3,15 +3,96 @@
     {
       "name": "Александр",
       "phone": "+7 (999) 123-45-67",
-      "bonusBalance": 12450,
-      "totalEarned": 16650,
+      "bonusBalance": 19350,
+      "totalEarned": 23550,
       "totalSpent": 8450,
       "streak": 7,
-      "level": 4,
+      "level": 7,
       "levelProgress": 65,
-      "xp": 31,
+      "xp": 151,
       "id": "legacy-user",
-      "passwordHash": ""
+      "passwordHash": "",
+      "clickHistory": [
+        {
+          "timestamp": "2026-05-26T21:23:29.119Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.284Z",
+          "action": "Просмотр списка карт"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.294Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.425Z",
+          "action": "Просмотр списка карт"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.448Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.484Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.506Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.821Z",
+          "action": "Просмотр списка карт"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:29.859Z",
+          "action": "Просмотр списка карт"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:32.239Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:32.258Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:32.274Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:35.087Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:38.093Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:38.933Z",
+          "action": "Получение 12 барашков на Курбан-байрам"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:38.957Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:38.977Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:39.009Z",
+          "action": "Просмотр профиля"
+        },
+        {
+          "timestamp": "2026-05-26T21:23:41.087Z",
+          "action": "Просмотр профиля"
+        }
+      ],
+      "claimedGifts": [
+        "kurban-2026"
+      ]
     },
     {
       "id": "a5681477-7177-4dc6-a3f5-aba8841f1c41",
@@ -106,7 +187,9 @@
     }
   ],
   "transactions": [],
-  "allowedOAuthDomains": ["https://mannhacks.vercel.app"],
+  "allowedOAuthDomains": [
+    "https://mannhacks.vercel.app"
+  ],
   "tasks": [
     {
       "id": "task-1",
@@ -314,5 +397,20 @@
       "activated": true,
       "userId": "legacy-user"
     }
-  ]
+  ],
+  "oauthApps": [],
+  "mnkMarket": {
+    "basePrice": 0.1,
+    "startTime": 1779830609115,
+    "candles": [
+      {
+        "time": 1779830609115,
+        "open": 0.1,
+        "high": 0.12571150438746156,
+        "low": 0.1,
+        "close": 0.12571150438746156
+      }
+    ],
+    "crashed": false
+  }
 }

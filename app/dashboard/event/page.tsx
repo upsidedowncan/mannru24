@@ -1,22 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useEffect, useState, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Moon, Star, Gift, Sparkles, CheckCircle2, RefreshCw, Calendar, Heart } from "lucide-react";
+import { Moon, Star, Gift, CheckCircle2, RefreshCw, Calendar, Heart, Terminal, Ghost } from "lucide-react";
 import { toast } from "sonner";
 import { useProgression } from "@/lib/progression";
 import { isEventActive } from "@/lib/events";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { UserProfile } from "@/lib/db";
 
 export default function EventPage() {
   const [loading, setLoading] = useState(true);
+  const [calculating, setCalculating] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [calcResult, setCalcResult] = useState<{ sheepCount: number; giftAmount: number; xpAmount: number; reason: string } | null>(null);
+  const [stage, setStage] = useState<"intro" | "calculating" | "result">("intro");
+  const [logs, setLogs] = useState<string[]>([]);
+
   const { triggerLevelUps, refresh } = useProgression();
   const router = useRouter();
 
@@ -29,6 +33,9 @@ export default function EventPage() {
       }
       const data = await res.json();
       setUser(data);
+      if (data.claimedGifts?.includes("kurban-2026")) {
+        setStage("result");
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -44,20 +51,64 @@ export default function EventPage() {
     fetchData();
   }, [router, fetchData]);
 
+  const startCalculation = async () => {
+    setStage("calculating");
+    setLogs([]);
+
+    const fakeLogs = [
+      "Инициализация системы Овца-Альфа v1.0...",
+      "Сканирование истории кликов за 2026 год...",
+      "Анализ подозрительной активности в разделе карт...",
+      "Оценка уровня лояльности к цифровому капиталу...",
+      "Проверка на наличие скрытых долгов...",
+      "Подсчет барашков на душу населения...",
+      "Генерация саркастичного обоснования...",
+    ];
+
+    for (let i = 0; i < fakeLogs.length; i++) {
+      setLogs(prev => [...prev, fakeLogs[i]]);
+      await new Promise(r => setTimeout(r, 800));
+    }
+
+    setCalculating(true);
+    try {
+      const res = await fetch("/api/event/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ calculateOnly: true })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCalcResult(data);
+        setStage("result");
+      } else {
+        toast.error(data.error || "Ошибка калькулятора");
+        setStage("intro");
+      }
+    } catch {
+      toast.error("Ошибка сети");
+      setStage("intro");
+    } finally {
+      setCalculating(false);
+    }
+  };
+
   const claimGift = async () => {
     setClaiming(true);
     try {
-      const res = await fetch("/api/event/claim", { method: "POST" });
+      const res = await fetch("/api/event/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ calculateOnly: false })
+      });
       const data = await res.json();
 
       if (res.ok) {
-        toast.success("Подарок получен!", {
-          description: `Вы получили ${data.giftAmount} MR и ${data.xpAmount} XP.`,
+        toast.success("Подарки зачислены!", {
+          description: `Вы получили ${data.sheepCount} барашков (${data.giftAmount} MR) и ${data.xpAmount} XP.`,
         });
 
         if (data.levelUps && data.levelUps.length > 0) {
-          // Update progression state with new level info
-          // We need fresh user data for currentXp/nextXp
           const userRes = await fetch("/api/user");
           const userData = await userRes.json();
           triggerLevelUps(data.levelUps, userData.level, userData.xp, userData.currentXp, userData.nextXp);
@@ -94,22 +145,21 @@ export default function EventPage() {
           <Badge className="mb-4 bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20">
             Специальное событие
           </Badge>
-          <h1 className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight">
-            Курбан-байрам <span className="text-emerald-500">2026</span>
+          <h1 className="text-4xl lg:text-5xl font-black text-white mb-4 tracking-tight leading-none">
+            Курбан-байрам <span className="text-emerald-500 italic">2026</span>
           </h1>
           <p className="text-zinc-400 text-lg leading-relaxed mb-8">
-            В честь праздника Маннру Банк дарит всем пользователям праздничный бонус.
-            Мы ценим ваше доверие и желаем процветания вашему капиталу!
+            Наш ИИ-алгоритм «Овца-Альфа» проанализирует ваши грехи и заслуги в Банке Маннру, чтобы выдать справедливое количество барашков. Один барашек равен 500 MR.
           </p>
 
           <div className="flex flex-wrap gap-4">
              <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-4">
                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                 <Gift className="w-6 h-6 text-emerald-500" />
+                 <Ghost className="w-6 h-6 text-emerald-500" />
                </div>
                <div>
-                 <p className="text-[10px] uppercase text-emerald-500/70 font-bold">Ваш подарок</p>
-                 <p className="text-xl font-bold text-white">500 MR + 10 XP</p>
+                 <p className="text-[10px] uppercase text-emerald-500/70 font-bold">Текущий курс</p>
+                 <p className="text-xl font-bold text-white">1 🐑 = 500 MR</p>
                </div>
              </div>
 
@@ -118,8 +168,8 @@ export default function EventPage() {
                  <Calendar className="w-6 h-6 text-zinc-400" />
                </div>
                <div>
-                 <p className="text-[10px] uppercase text-zinc-500 font-bold">Длительность</p>
-                 <p className="text-xl font-bold text-white">До 30 мая</p>
+                 <p className="text-[10px] uppercase text-zinc-500 font-bold">Окончание</p>
+                 <p className="text-xl font-bold text-white">30 мая</p>
                </div>
              </div>
           </div>
@@ -127,39 +177,118 @@ export default function EventPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 bg-zinc-950 border-zinc-900 overflow-hidden relative group">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-500" />
-              Праздничный бонус
-            </CardTitle>
-            <CardDescription>
-              Нажмите кнопку ниже, чтобы зачислить подарок на ваш бонусный баланс.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pb-8">
-            {isClaimed ? (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center">
-                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-1">Подарок получен</h3>
-                <p className="text-zinc-400 text-sm">Вы уже забрали свой праздничный бонус. Ждите следующих событий!</p>
-              </div>
-            ) : (
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+        <Card className="lg:col-span-2 bg-zinc-950 border-zinc-900 overflow-hidden relative min-h-[400px] flex flex-col">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
+
+          <AnimatePresence mode="wait">
+            {stage === "intro" && (
+              <motion.div
+                key="intro"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="p-8 flex-1 flex flex-col items-center justify-center text-center space-y-6"
+              >
+                <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                  <Terminal className="w-10 h-10 text-emerald-500" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold text-white">Готовы к расчету?</h3>
+                  <p className="text-zinc-400 max-w-md">
+                    Наш алгоритм изучит каждый ваш клик, каждую транзакцию и каждый раз, когда вы просто смотрели на баланс, чтобы определить вашу долю.
+                  </p>
+                </div>
                 <Button
-                  onClick={claimGift}
-                  disabled={claiming}
+                  onClick={startCalculation}
+                  disabled={calculating}
                   variant="gradient"
-                  className="w-full h-20 text-xl font-bold gap-3 shadow-[0_10px_30px_rgba(16,185,129,0.2)]"
+                  className="w-full max-w-xs h-14 text-lg font-bold shadow-[0_0_30px_rgba(16,185,129,0.2)]"
                 >
-                  {claiming ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
-                    <>Забрать подарок <Gift className="w-6 h-6" /></>
-                  )}
+                  {calculating ? <RefreshCw className="w-5 h-5 animate-spin" /> : "Запустить расчет барашков"}
                 </Button>
               </motion.div>
             )}
-          </CardContent>
+
+            {stage === "calculating" && (
+              <motion.div
+                key="calculating"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="p-8 flex-1 font-mono text-xs text-emerald-500 space-y-2 overflow-y-auto"
+              >
+                {logs.map((log, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ x: -10, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                  >
+                    {`> ${log}`}
+                  </motion.div>
+                ))}
+                <motion.div
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ repeat: Infinity, duration: 0.8 }}
+                  className="inline-block w-2 h-4 bg-emerald-500 ml-1"
+                />
+              </motion.div>
+            )}
+
+            {stage === "result" && (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-8 flex-1 flex flex-col items-center justify-center text-center"
+              >
+                {(calcResult || isClaimed) && (
+                  <>
+                    <div className="relative mb-6">
+                      <motion.div
+                        animate={{ y: [0, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="text-7xl"
+                      >
+                        🐑
+                      </motion.div>
+                      <div className="absolute -top-2 -right-4 bg-emerald-500 text-black text-xl font-black px-3 py-1 rounded-full shadow-xl">
+                        x{calcResult?.sheepCount || "?"}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-8">
+                      <h3 className="text-3xl font-black text-white uppercase tracking-tighter">
+                        Результат: {calcResult ? `${calcResult.giftAmount.toLocaleString()} MR` : isClaimed ? "ПОДАРКИ ПОЛУЧЕНЫ" : "???"}
+                      </h3>
+                      <p className="text-emerald-500 font-mono text-sm italic max-w-md px-4">
+                        &quot;{calcResult?.reason || (isClaimed ? "Вы уже получили свои подарки. ИИ доволен вашим прогрессом." : "Генерация обоснования...")}&quot;
+                      </p>
+                    </div>
+
+                    {!isClaimed ? (
+                      <Button
+                        onClick={claimGift}
+                        disabled={claiming}
+                        variant="gradient"
+                        className="w-full max-w-xs h-16 text-xl font-black gap-3 shadow-[0_10px_40px_rgba(16,185,129,0.3)]"
+                      >
+                        {claiming ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
+                          <>ЗАБРАТЬ ВСЁ <Gift className="w-6 h-6" /></>
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2">
+                        <Badge variant="success" className="h-10 px-6 text-base gap-2">
+                          <CheckCircle2 className="w-5 h-5" /> ПОДАРКИ ПОЛУЧЕНЫ
+                        </Badge>
+                        <p className="text-zinc-500 text-xs mt-2">Ваш капитал вырос на {calcResult?.giftAmount || "?"} MR</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
 
         <Card className="bg-zinc-950 border-zinc-900">
@@ -169,11 +298,11 @@ export default function EventPage() {
           <CardContent className="space-y-6">
              <div className="space-y-2">
                <div className="flex justify-between text-sm">
-                 <span className="text-zinc-400">Статус</span>
-                 <span className="text-emerald-500 font-bold">Активен</span>
+                 <span className="text-zinc-400">Статус Овца-Альфа</span>
+                 <span className="text-emerald-500 font-bold">ОНЛАЙН</span>
                </div>
                <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-                 <div className="h-full bg-emerald-500 w-[80%]" />
+                 <div className="h-full bg-emerald-500 w-[100%] animate-pulse" />
                </div>
              </div>
 
