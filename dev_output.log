@@ -1,0 +1,42 @@
+
+> mannru@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 578ms
+- Experiments (use with caution):
+  ✓ webpackMemoryOptimizations
+
+ GET /login 200 in 756ms (next.js: 285ms, application-code: 471ms)
+ GET /api/investments/market 401 in 244ms (next.js: 118ms, proxy.ts: 95ms, application-code: 31ms)
+ GET /api/user 401 in 296ms (next.js: 189ms, proxy.ts: 96ms, application-code: 10ms)
+ GET /api/investments/market 401 in 18ms (next.js: 4ms, proxy.ts: 6ms, application-code: 7ms)
+ GET /api/investments/market 401 in 27ms (next.js: 7ms, proxy.ts: 8ms, application-code: 11ms)
+ GET /api/user 401 in 28ms (next.js: 10ms, proxy.ts: 9ms, application-code: 8ms)
+ GET /api/investments/market 401 in 22ms (next.js: 3ms, proxy.ts: 12ms, application-code: 7ms)
+ GET /api/user 401 in 22ms (next.js: 7ms, proxy.ts: 5ms, application-code: 10ms)
+ GET /api/investments/market 401 in 26ms (next.js: 10ms, proxy.ts: 9ms, application-code: 7ms)
+ GET /api/investments/market 401 in 18ms (next.js: 4ms, proxy.ts: 6ms, application-code: 8ms)
+ GET /api/investments/market 401 in 31ms (next.js: 9ms, proxy.ts: 10ms, application-code: 12ms)
+ GET /api/user 401 in 32ms (next.js: 13ms, proxy.ts: 11ms, application-code: 8ms)
+ GET /api/investments/market 401 in 14ms (next.js: 3ms, proxy.ts: 6ms, application-code: 4ms)
+ GET /api/investments/market 401 in 22ms (next.js: 5ms, proxy.ts: 8ms, application-code: 8ms)
+ GET /api/user 401 in 23ms (next.js: 7ms, proxy.ts: 9ms, application-code: 7ms)
+ GET /api/investments/market 401 in 14ms (next.js: 3ms, proxy.ts: 6ms, application-code: 5ms)
+ GET /api/investments/market 401 in 17ms (next.js: 5ms, proxy.ts: 8ms, application-code: 5ms)
+ GET /api/user 401 in 23ms (next.js: 11ms, proxy.ts: 6ms, application-code: 6ms)
+ GET /api/investments/market 401 in 14ms (next.js: 3ms, proxy.ts: 5ms, application-code: 6ms)
+ GET /api/investments/market 401 in 22ms (next.js: 5ms, proxy.ts: 8ms, application-code: 9ms)
+ GET /api/user 401 in 23ms (next.js: 8ms, proxy.ts: 9ms, application-code: 7ms)
+ GET /api/investments/market 401 in 15ms (next.js: 4ms, proxy.ts: 4ms, application-code: 7ms)
+ GET /api/investments/market 401 in 25ms (next.js: 7ms, proxy.ts: 12ms, application-code: 6ms)
+ GET /api/user 401 in 31ms (next.js: 13ms, proxy.ts: 10ms, application-code: 8ms)
+ GET /api/investments/market 401 in 14ms (next.js: 3ms, proxy.ts: 5ms, application-code: 6ms)
+ GET /api/investments/market 401 in 19ms (next.js: 5ms, proxy.ts: 5ms, application-code: 9ms)
+ GET /api/user 401 in 21ms (next.js: 8ms, proxy.ts: 6ms, application-code: 7ms)
+ GET /api/investments/market 401 in 15ms (next.js: 5ms, proxy.ts: 5ms, application-code: 4ms)
+ GET /api/investments/market 401 in 18ms (next.js: 5ms, proxy.ts: 5ms, application-code: 9ms)
+ GET /api/user 401 in 19ms (next.js: 8ms, proxy.ts: 6ms, application-code: 6ms)
+ GET /api/investments/market 401 in 15ms (next.js: 4ms, proxy.ts: 5ms, application-code: 6ms)
