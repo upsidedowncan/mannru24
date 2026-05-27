@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { TargetIcon, UpdateIcon, ChevronLeftIcon, PersonIcon, Cross2Icon } from "@radix-ui/react-icons";
@@ -160,15 +161,16 @@ export default function RoulettePage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase text-zinc-500">Карта для списания</label>
-                    <select
-                      value={selectedCardId}
-                      onChange={e => setSelectedCardId(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-sm"
-                    >
-                      {cards.map(c => (
-                        <option key={c.id} value={c.id}>{c.tier} ••{c.number.slice(-4)}</option>
-                      ))}
-                    </select>
+                    <Select value={selectedCardId} onValueChange={setSelectedCardId}>
+                      <SelectTrigger className="w-full bg-zinc-900 border-zinc-800">
+                        <SelectValue placeholder="Выберите карту" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cards.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.tier} ••{c.number.slice(-4)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <Button onClick={startGame} disabled={actionLoading} className="w-full h-14 bg-red-600 hover:bg-red-700 text-white font-bold text-lg">
