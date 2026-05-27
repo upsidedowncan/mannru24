@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { UpdateIcon, ChevronLeftIcon } from "@radix-ui/react-icons";
+import { UpdateIcon, ChevronLeftIcon, GridIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 
 type Player = "X" | "O" | null;
@@ -97,61 +97,61 @@ export default function TicTacToePage() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><UpdateIcon className="w-8 h-8 animate-spin" /></div>;
+  if (loading) return <div className="space-y-6"><div className="h-8 w-32 bg-secondary rounded animate-pulse" /><div className="h-[400px] bg-secondary rounded-xl animate-pulse" /></div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20 relative">
-      <Link href="/dashboard/games" className="flex items-center gap-2 text-zinc-500 hover:text-zinc-300 transition-colors relative z-10">
+    <div className="max-w-4xl mx-auto space-y-6">
+      <Link href="/dashboard/games" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
         <ChevronLeftIcon /> К играм
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <Card className="bg-black border-zinc-900 overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-20" />
+        <Card>
           <CardHeader>
-            <CardTitle className="text-3xl font-black italic tracking-tighter text-white uppercase">NEO-TIC-TAC</CardTitle>
-            <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-zinc-600">Deep Blue AI Variant v4.2</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <GridIcon className="w-5 h-5 text-blue-500" /> Крестики-Нолики
+            </CardTitle>
+            <CardDescription className="text-xs text-balance">Сразитесь с ИИ Системы. Победа удваивает ставку, ничья возвращает её.</CardDescription>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-6">
             {gameState === "lobby" ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-zinc-600 tracking-widest">Entry Fee</label>
-                    <Input type="number" value={bet} onChange={e => setBet(Number(e.target.value))} className="h-12 bg-zinc-950 border-zinc-900" />
+                    <label className="text-[10px] font-semibold uppercase text-muted-foreground">Ставка</label>
+                    <Input type="number" value={bet} onChange={e => setBet(Number(e.target.value))} className="bg-secondary/50" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-zinc-600 tracking-widest">Payment Method</label>
+                    <label className="text-[10px] font-semibold uppercase text-muted-foreground">Карта</label>
                     <Select value={selectedCardId} onValueChange={setSelectedCardId}>
-                      <SelectTrigger className="h-12 bg-zinc-950 border-zinc-900">
+                      <SelectTrigger className="bg-secondary/50">
                         <SelectValue placeholder="Карта" />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-950 border-zinc-900">
+                      <SelectContent>
                         {cards.map(c => (
-                          <SelectItem key={c.id} value={c.id}>{c.tier.toUpperCase()} ••{c.number.slice(-4)}</SelectItem>
+                          <SelectItem key={c.id} value={c.id}>{c.tier} ••{c.number.slice(-4)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-                <Button onClick={startGame} disabled={actionLoading} className="w-full h-16 bg-blue-600 hover:bg-blue-500 font-black uppercase tracking-widest text-lg italic shadow-[0_0_30px_rgba(37,99,235,0.2)]">
-                  {actionLoading ? <UpdateIcon className="animate-spin" /> : "START SESSION"}
+                <Button onClick={startGame} disabled={actionLoading} className="w-full h-12" variant="gradient">
+                  {actionLoading ? <UpdateIcon className="animate-spin" /> : "Начать матч"}
                 </Button>
               </div>
             ) : (
               <div className="space-y-8">
-                <div className="grid grid-cols-3 gap-2 aspect-square max-w-[300px] mx-auto">
+                <div className="grid grid-cols-3 gap-2 aspect-square max-w-[280px] mx-auto">
                   {board.map((cell, i) => (
-                    <motion.button
+                    <button
                       key={i}
-                      whileHover={!cell && !actionLoading ? { backgroundColor: "rgba(255,255,255,0.05)" } : {}}
                       onClick={() => handleMove(i)}
                       disabled={actionLoading || !!cell}
-                      className="bg-zinc-950 border border-zinc-900 rounded-xl flex items-center justify-center text-4xl font-black relative overflow-hidden h-24"
+                      className="bg-secondary/30 border border-border rounded-xl flex items-center justify-center text-4xl font-bold transition-colors hover:bg-secondary/50 h-full"
                     >
                       <AnimatePresence mode="wait">
                         {cell === "X" && (
-                          <motion.span key="X" initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} className="text-blue-500">
+                          <motion.span key="X" initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-blue-500">
                             X
                           </motion.span>
                         )}
@@ -161,23 +161,21 @@ export default function TicTacToePage() {
                           </motion.span>
                         )}
                       </AnimatePresence>
-                    </motion.button>
+                    </button>
                   ))}
                 </div>
 
-                <div className="text-center min-h-[100px] flex flex-col justify-center">
+                <div className="text-center min-h-[80px] flex flex-col justify-center">
                    {gameState === "playing" ? (
-                     <div className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-600">
-                       {actionLoading ? "AI Processing (O)..." : "Your Turn (X)"}
-                     </div>
+                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+                       {actionLoading ? "ИИ делает ход..." : "Ваш ход (X)"}
+                     </p>
                    ) : (
-                     <div className="space-y-4">
-                        <h3 className={`text-4xl font-black italic uppercase ${gameState === "won" ? "text-emerald-500" : gameState === "lost" ? "text-red-600" : "text-zinc-500"}`}>
-                           {gameState === "won" ? "VICTORY" : gameState === "lost" ? "FAILURE" : "DRAW"}
+                     <div className="space-y-3">
+                        <h3 className={`text-2xl font-bold uppercase italic ${gameState === "won" ? "text-emerald-500" : gameState === "lost" ? "text-red-500" : "text-zinc-500"}`}>
+                           {gameState === "won" ? "Победа!" : gameState === "lost" ? "Поражение" : "Ничья"}
                         </h3>
-                        <Button onClick={() => setGameState("lobby")} variant="outline" className="border-zinc-900 text-[10px] font-black uppercase tracking-widest">
-                          RETURN TO LOBBY
-                        </Button>
+                        <Button onClick={() => setGameState("lobby")} variant="outline" size="sm">В лобби</Button>
                      </div>
                    )}
                 </div>
@@ -187,22 +185,20 @@ export default function TicTacToePage() {
         </Card>
 
         <div className="space-y-6">
-           <Card className="bg-zinc-950 border-zinc-900 border-l-blue-600/50 border-l-4">
-             <CardHeader>
-                <CardTitle className="text-xs font-black uppercase tracking-widest text-zinc-500">System Logs</CardTitle>
+           <Card className="bg-secondary/10">
+             <CardHeader className="pb-3">
+                <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Детали матча</CardTitle>
              </CardHeader>
-             <CardContent className="font-mono text-[10px] text-zinc-600 space-y-2">
-                <p>{">"} INITIALIZING TIC-TAC-TOE KERNEL...</p>
-                <p>{">"} CONNECTING TO DEEP BLUE CLUSTER...</p>
-                <p>{">"} STATUS: READY</p>
-                <p>{">"} CURRENT BET: {bet} MR</p>
-                <p>{">"} POSSIBLE PAYOUT: {bet * 2} MR</p>
+             <CardContent className="text-xs space-y-2.5">
+                <div className="flex justify-between"><span className="text-muted-foreground">Ставка:</span> <span>{bet} МР</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Награда за победу:</span> <span className="text-emerald-500">+{bet * 2} МР</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">При ничьей:</span> <span>+{bet} МР (возврат)</span></div>
              </CardContent>
            </Card>
 
-           <div className="p-8 rounded-3xl bg-zinc-900/30 border border-zinc-900 text-center">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-700 mb-4">Player Portfolio</h4>
-              <p className="text-4xl font-black text-white">{cards.find(c => c.id === selectedCardId)?.balance.toLocaleString()} <span className="text-sm text-zinc-500">МР</span></p>
+           <div className="p-6 rounded-2xl bg-background border border-border text-center">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Баланс карты</p>
+              <p className="text-2xl font-bold">{cards.find(c => c.id === selectedCardId)?.balance.toLocaleString()} МР</p>
            </div>
         </div>
       </div>

@@ -22,6 +22,7 @@ const navItems = [
   { href: "/dashboard", label: "Главная", icon: DashboardIcon },
   { href: "/dashboard/cards", label: "Карты", icon: CardStackIcon },
   { href: "/dashboard/tasks", label: "Задания", icon: CheckIcon },
+  { href: "/dashboard/lariek", label: "Ларёк", icon: ArchiveIcon },
   { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
   { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
   { href: "/dashboard/games", label: "Игры", icon: RocketIcon },
