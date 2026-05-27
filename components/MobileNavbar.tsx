@@ -11,6 +11,7 @@ import {
   CounterClockwiseClockIcon,
   LockClosedIcon,
   MoonIcon,
+  RocketIcon,
 } from "@radix-ui/react-icons";
 import { useProgression } from "@/lib/progression";
 
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/dashboard/tasks", label: "Задания", icon: CheckIcon },
   { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
   { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
+  { href: "/dashboard/games", label: "Игры", icon: RocketIcon },
 ];
 
 export function MobileNavbar() {

@@ -23,6 +23,7 @@ export const pageUnlockLevel: Record<string, number> = {
   "/dashboard/bonuses": 10,
   "/dashboard/tasks": 2,
   "/dashboard/investments": 15,
+  "/dashboard/games": 1,
 };
 
 export const emojiCodeUnlockLevel = 5;

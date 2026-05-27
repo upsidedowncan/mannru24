@@ -16,6 +16,7 @@ import {
   LayoutIcon,
   LockClosedIcon,
   StarFilledIcon,
+  RocketIcon,
 } from "@radix-ui/react-icons";
 import { Progress } from "@/components/ui/progress";
 import { useProgression } from "@/lib/progression";
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
   { href: "/dashboard/transfers", label: "Переводы", icon: DoubleArrowLeftIcon },
   { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
+  { href: "/dashboard/games", label: "Игры", icon: RocketIcon },
   { href: "/dashboard/investments", label: "Инвестиции", icon: StarFilledIcon },
 ];
 
