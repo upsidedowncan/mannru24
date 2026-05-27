@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { DiscIcon, UpdateIcon, ChevronLeftIcon, StarFilledIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 
-
 const SYMBOLS = ["🍒", "🍋", "🍊", "🍇", "🔔", "💎", "7️⃣"];
 
 export default function SlotsPage() {
@@ -50,7 +49,7 @@ export default function SlotsPage() {
         SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
         SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
       ]);
-    }, 80);
+    }, 100);
 
     try {
       const res = await fetch("/api/games/slots", {
@@ -82,119 +81,93 @@ export default function SlotsPage() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><UpdateIcon className="w-8 h-8 animate-spin" /></div>;
+  if (loading) return <div className="space-y-6"><div className="h-8 w-32 bg-secondary rounded animate-pulse" /><div className="h-[400px] bg-secondary rounded-xl animate-pulse" /></div>;
 
   const selectedCard = cards.find(c => c.id === selectedCardId);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20 relative">
-      <div className="fixed inset-0 pointer-events-none opacity-20">
-      </div>
-
-      <Link href="/dashboard/games" className="flex items-center gap-2 text-zinc-500 hover:text-zinc-300 transition-colors relative z-10">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <Link href="/dashboard/games" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
         <ChevronLeftIcon /> К играм
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 bg-black border-amber-900/40 shadow-[0_0_50px_rgba(245,158,11,0.05)] overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50" />
-          <CardHeader className="text-center relative">
-            <CardTitle className="text-5xl font-black tracking-tighter uppercase italic text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-amber-600">
-              GOLD SLOTS
-            </CardTitle>
-            <CardDescription className="text-amber-900 font-bold tracking-[0.2em] uppercase text-[10px]">
-              Premium Gambling Experience
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-10">
-            {/* Slot Machine UI */}
-            <div className="relative p-1 bg-gradient-to-b from-amber-900/50 to-zinc-900 rounded-[2rem]">
-               <div className="flex justify-center gap-4 py-16 bg-zinc-950 rounded-[1.8rem] border-4 border-black shadow-[inset_0_0_40px_rgba(0,0,0,0.8)]">
-                {reels.map((symbol, i) => (
-                  <div key={i} className="relative w-24 h-36 bg-gradient-to-b from-zinc-900 to-black rounded-xl border border-white/5 flex items-center justify-center text-6xl shadow-2xl overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-60 z-10" />
-                    <motion.div
-                      animate={spinning ? { y: [0, -300] } : { y: 0 }}
-                      transition={spinning ? { repeat: Infinity, duration: 0.15, ease: "linear" } : { type: "spring", stiffness: 100 }}
-                    >
-                      {symbol}
-                    </motion.div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase text-amber-600/60 tracking-widest ml-1">Asset Source</label>
-                <Select value={selectedCardId} onValueChange={setSelectedCardId}>
-                  <SelectTrigger className="h-12 bg-zinc-900/50 border-amber-900/20 text-zinc-300">
-                    <SelectValue placeholder="Выберите карту" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-950 border-amber-900/30">
-                    {cards.map(c => (
-                      <SelectItem key={c.id} value={c.id} className="text-zinc-400">
-                        {c.tier.toUpperCase()} • {c.balance.toLocaleString()} МР
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase text-amber-600/60 tracking-widest ml-1">Venture Amount</label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={bet}
-                    onChange={(e) => setBet(Number(e.target.value))}
-                    className="h-12 bg-zinc-900/50 border-amber-900/20 text-amber-500 font-bold pl-10"
-                    min={1}
-                  />
-                  <StarFilledIcon className="absolute left-3 top-4 w-4 h-4 text-amber-600/40" />
-                </div>
-              </div>
-            </div>
-
-            <Button
-              onClick={spin}
-              disabled={spinning || !selectedCardId || bet <= 0}
-              variant="gradient"
-              className="w-full h-20 text-2xl font-black uppercase tracking-tighter bg-gradient-to-b from-amber-400 to-amber-700 hover:from-amber-300 hover:to-amber-600 shadow-[0_0_30px_rgba(245,158,11,0.2)] rounded-2xl"
-            >
-              {spinning ? <UpdateIcon className="w-8 h-8 animate-spin" /> : "PULL THE LEVER"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card className="bg-zinc-950 border-zinc-900 border-l-amber-900/50 border-l-4">
-            <CardHeader>
-              <CardTitle className="text-xs font-black uppercase tracking-widest text-zinc-500">Yield Multipliers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[
-                  { sym: "7️⃣ 7️⃣ 7️⃣", mul: "x50", color: "text-amber-400" },
-                  { sym: "💎 💎 💎", mul: "x20", color: "text-blue-400" },
-                  { sym: "🔔 🔔 🔔", mul: "x10", color: "text-yellow-400" },
-                  { sym: "ANY 3x MATCH", mul: "x5", color: "text-emerald-400" },
-                  { sym: "ANY 2x MATCH", mul: "x1.5", color: "text-zinc-400" },
-                ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
-                    <span className="text-lg">{item.sym}</span>
-                    <span className={`font-black ${item.color}`}>{item.mul}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-900/20 to-transparent border border-amber-900/20">
-            <p className="text-[10px] uppercase font-bold text-amber-700 mb-2">Liquidity Status</p>
-            <p className="text-3xl font-black text-white">{selectedCard?.balance.toLocaleString()} <span className="text-sm text-zinc-500">МР</span></p>
+      <Card>
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
+            <DiscIcon className={`w-6 h-6 text-amber-500 ${spinning ? 'animate-spin' : ''}`} />
           </div>
-        </div>
-      </div>
+          <CardTitle>Слоты 777</CardTitle>
+          <CardDescription>Выигрыш до x50 от вашей ставки</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          <div className="flex justify-center gap-4 py-8 bg-secondary/30 rounded-2xl border">
+            {reels.map((symbol, i) => (
+              <motion.div
+                key={i}
+                animate={spinning ? { y: [0, -10, 10, 0] } : {}}
+                className="w-16 h-24 bg-background rounded-lg border flex items-center justify-center text-4xl shadow-sm"
+              >
+                {symbol}
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-semibold uppercase text-muted-foreground">Карта</label>
+              <Select value={selectedCardId} onValueChange={setSelectedCardId}>
+                <SelectTrigger className="bg-secondary/50">
+                  <SelectValue placeholder="Выберите карту" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cards.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.tier} • {c.balance.toLocaleString()} МР
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-semibold uppercase text-muted-foreground">Ставка</label>
+              <Input
+                type="number"
+                value={bet}
+                onChange={(e) => setBet(Number(e.target.value))}
+                className="bg-secondary/50"
+              />
+            </div>
+          </div>
+
+          <Button
+            onClick={spin}
+            disabled={spinning || !selectedCardId || bet <= 0}
+            className="w-full h-12 text-lg font-bold"
+            variant="gradient"
+          >
+            {spinning ? <UpdateIcon className="animate-spin" /> : "Крутить"}
+          </Button>
+
+          {selectedCard && (
+            <p className="text-center text-[10px] text-muted-foreground">
+              Доступно: <span className="text-foreground font-semibold">{selectedCard.balance.toLocaleString()} МР</span>
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="bg-accent/30">
+        <CardContent className="pt-4">
+          <h4 className="text-[10px] font-bold text-muted-foreground uppercase mb-3">Таблица выплат:</h4>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="flex justify-between border-b border-white/5 pb-1"><span>7️⃣ 7️⃣ 7️⃣</span> <span className="text-amber-500 font-bold">x50</span></div>
+            <div className="flex justify-between border-b border-white/5 pb-1"><span>💎 💎 💎</span> <span className="text-blue-500 font-bold">x20</span></div>
+            <div className="flex justify-between border-b border-white/5 pb-1"><span>🔔 🔔 🔔</span> <span className="text-yellow-500 font-bold">x10</span></div>
+            <div className="flex justify-between border-b border-white/5 pb-1"><span>3 одинаковых</span> <span className="text-emerald-500 font-bold">x5</span></div>
+            <div className="flex justify-between border-b border-white/5 pb-1"><span>2 одинаковых</span> <span className="text-zinc-400 font-bold">x1.5</span></div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
