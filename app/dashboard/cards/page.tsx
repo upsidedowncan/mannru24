@@ -152,7 +152,7 @@ export default function CardsPage() {
     fetchCards();
   };
 
-  const cardLabels = cards.map((c) => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${tierMeta[c.tier].label} ••${c.number.slice(-4)}` }));
+  const cardLabels = cards.map((c) => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${tierMeta[c.tier]?.label || c.tier} ••${c.number.slice(-4)}` }));
 
   return (
     <div className="space-y-6">

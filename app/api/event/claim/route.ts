@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   }
 
   const giftAmount = sheepCount * 500;
-  const xpAmount = sheepCount * 10;
+  const xpAmount = 0; // Removed XP to prevent level-ups
 
   if (isCalculationOnly) {
     return NextResponse.json({
@@ -96,14 +96,32 @@ export async function POST(req: Request) {
     });
   }
 
+  // Find or create Rewards Card
+  let rewardsCard = db.cards.find(c => c.userId === user.id && c.tier === "rewards");
+  if (!rewardsCard) {
+    rewardsCard = {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      tier: "rewards",
+      number: `•••• •••• •••• ${Math.floor(1000 + Math.random() * 9000)}`,
+      holder: user.name.toUpperCase(),
+      balance: 0,
+      expiry: "05/30",
+      createdAt: new Date().toISOString(),
+      emojiCode: "🐑🎁🐑🎁", // Fixed fun emoji code for rewards card
+    };
+    db.cards.push(rewardsCard);
+  }
+
   // Award gift
-  user.bonusBalance += giftAmount;
+  rewardsCard.balance += giftAmount;
   user.totalEarned += giftAmount;
   user.claimedGifts.push("kurban-2026");
 
-  const levelUps = addXp(db, user.id, xpAmount);
+  // No XP added here as requested
+  const levelUps: number[] = [];
 
-  logClick(db, user.id, `Получение ${sheepCount} барашков на Курбан-байрам`);
+  logClick(db, user.id, `Получение ${sheepCount} барашков на Карту Подарков`);
   writeDb(db);
 
   return NextResponse.json({

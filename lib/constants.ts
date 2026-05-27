@@ -1,7 +1,8 @@
-export type CardTier = "bronze" | "silver" | "gold" | "platinum" | "titanium" | "ruby" | "emerald" | "sapphire" | "diamond" | "black" | "obsidian";
+export type CardTier = "bronze" | "silver" | "gold" | "platinum" | "titanium" | "ruby" | "emerald" | "sapphire" | "diamond" | "black" | "obsidian" | "rewards";
 
 export const tierUnlockLevel: Record<CardTier, number> = {
   bronze: 1,
+  rewards: 1,
   silver: 3,
   gold: 6,
   platinum: 10,

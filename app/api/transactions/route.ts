@@ -120,13 +120,26 @@ export async function POST(req: NextRequest) {
 
   db.transactions.unshift(tx);
   logClick(db, currentUser.id, `Транзакция: ${body.name} (${body.amount} MR)`);
+
+  let finalDeduction = body.amount;
+  let isRewardsCard = false;
+
   if (body.cardId) {
     const card = db.cards.find((c: any) => c.id === body.cardId && c.userId === currentUser.id);
-    if (card) card.balance += body.amount;
+    if (card) {
+      if (card.tier === "rewards" && body.amount < 0) {
+        // Apply 6% commission for spending/transferring from rewards card
+        finalDeduction = Math.round(body.amount * 1.06);
+        isRewardsCard = true;
+        tx.description = (tx.description || "") + " (Включая комиссию 6%)";
+      }
+      card.balance += finalDeduction;
+    }
   }
 
   let txLevelUps: number[] = [];
-  if (body.amount < 0) {
+  // XP only awarded for spending from regular cards
+  if (body.amount < 0 && !isRewardsCard) {
     const spentXp = Math.floor(Math.abs(body.amount) / 100);
     if (spentXp > 0) txLevelUps = addXp(db, currentUser.id, spentXp);
   }
