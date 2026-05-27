@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { motion, useAnimation } from "framer-motion";
 import { DiscIcon, UpdateIcon, ChevronLeftIcon } from "@radix-ui/react-icons";
@@ -122,17 +123,18 @@ export default function SlotsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-widest">Выберите карту</label>
-              <select
-                value={selectedCardId}
-                onChange={(e) => setSelectedCardId(e.target.value)}
-                className="w-full bg-zinc-900 border-zinc-800 rounded-lg p-3 text-sm"
-              >
-                {cards.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.tier} ••{c.number.slice(-4)} ({c.balance.toLocaleString()} МР)
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedCardId} onValueChange={setSelectedCardId}>
+                <SelectTrigger className="w-full bg-zinc-900 border-zinc-800">
+                  <SelectValue placeholder="Выберите карту" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cards.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.tier} ••{c.number.slice(-4)} ({c.balance.toLocaleString()} МР)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-widest">Ставка (МР)</label>
