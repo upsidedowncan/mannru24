@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { User, Phone, Shield, Eye, LogOut, Terminal, Clock, Star } from "lucide-react";
+import { PersonIcon, MobileIcon, LockClosedIcon, EyeOpenIcon, ExitIcon, CodeIcon, ClockIcon, StarFilledIcon } from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
 import type { UserProfile } from "@/lib/db";
 
@@ -44,13 +44,13 @@ export default function SettingsPage() {
         <Card className="md:col-span-2 bg-zinc-950 border-zinc-900">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
-                <Shield className="w-4 h-4 text-blue-500" /> Профиль
+                <LockClosedIcon className="w-4 h-4 text-blue-500" /> Профиль
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-24 h-24 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                 <User className="w-10 h-10 text-zinc-500" />
+                 <PersonIcon className="w-10 h-10 text-zinc-500" />
               </div>
               <div className="flex-1 space-y-4">
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -65,7 +65,7 @@ export default function SettingsPage() {
                  </div>
                  <div className="flex items-center gap-4">
                     <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 border-blue-500/20 px-3 py-1">
-                        <Star className="w-3 h-3 mr-1.5 fill-current" /> Уровень {user?.level}
+                        <StarFilledIcon className="w-3 h-3 mr-1.5 fill-current" /> Уровень {user?.level}
                     </Badge>
                     <Badge variant="outline" className="border-zinc-800 text-zinc-500 px-3 py-1">
                         ID: {user?.id.slice(0, 8)}...
@@ -78,7 +78,7 @@ export default function SettingsPage() {
 
             <div className="flex justify-end">
                <Button onClick={handleLogout} variant="destructive" size="sm" className="gap-2">
-                  <LogOut className="w-4 h-4" /> Выйти из аккаунта
+                  <ExitIcon className="w-4 h-4" /> Выйти из аккаунта
                </Button>
             </div>
           </CardContent>
@@ -87,7 +87,7 @@ export default function SettingsPage() {
         <Card className="bg-zinc-950 border-zinc-900 overflow-hidden">
           <CardHeader className="bg-zinc-900/50">
             <CardTitle className="text-sm font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-emerald-500" /> Логи кликов
+                <CodeIcon className="w-4 h-4 text-emerald-500" /> Логи кликов
             </CardTitle>
             <CardDescription className="text-[10px]">Система помнит всё.</CardDescription>
           </CardHeader>
@@ -99,7 +99,7 @@ export default function SettingsPage() {
                        <div key={i} className="space-y-1 border-l-2 border-zinc-900 pl-3 py-1">
                           <p className="text-[11px] text-zinc-200 leading-tight font-mono">{click.action}</p>
                           <div className="flex items-center gap-1.5 text-[9px] text-zinc-600 font-mono">
-                             <Clock className="w-2.5 h-2.5" />
+                             <ClockIcon className="w-2.5 h-2.5" />
                              {new Date(click.timestamp).toLocaleTimeString()}
                           </div>
                        </div>
@@ -116,7 +116,7 @@ export default function SettingsPage() {
       <Card className="bg-zinc-950 border-zinc-900 border-dashed">
          <CardContent className="py-10 flex flex-col items-center justify-center text-center space-y-4">
             <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-               <Shield className="w-6 h-6 text-zinc-700" />
+               <LockClosedIcon className="w-6 h-6 text-zinc-700" />
             </div>
             <div className="space-y-1">
                <h3 className="font-bold text-zinc-400 uppercase tracking-tighter">Настройки безопасности</h3>

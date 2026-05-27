@@ -4,20 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
-  CreditCard,
-  Gift,
-  CheckSquare,
-  ArrowLeftRight,
-  History,
-  Settings,
-  LogOut,
-  Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Lock,
-  Star,
-} from "lucide-react";
+  DashboardIcon,
+  CardStackIcon,
+  ArchiveIcon,
+  CheckIcon,
+  DoubleArrowLeftIcon,
+  CounterClockwiseClockIcon,
+  GearIcon,
+  ExitIcon,
+  MoonIcon,
+  LayoutIcon,
+  LockClosedIcon,
+  StarFilledIcon,
+} from "@radix-ui/react-icons";
 import { Progress } from "@/components/ui/progress";
 import { useProgression } from "@/lib/progression";
 import { pageUnlockLevel } from "@/lib/constants";
@@ -25,13 +24,13 @@ import { useRouter } from "next/navigation";
 import { isEventActive } from "@/lib/events";
 
 const navItems = [
-  { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
-  { href: "/dashboard/cards", label: "Карты", icon: CreditCard },
-  { href: "/dashboard/tasks", label: "Задания", icon: CheckSquare },
-  { href: "/dashboard/history", label: "История", icon: History },
-  { href: "/dashboard/transfers", label: "Переводы", icon: ArrowLeftRight },
-  { href: "/dashboard/bonuses", label: "Бонусы", icon: Gift },
-  { href: "/dashboard/investments", label: "Инвестиции", icon: Star },
+  { href: "/dashboard", label: "Главная", icon: DashboardIcon },
+  { href: "/dashboard/cards", label: "Карты", icon: CardStackIcon },
+  { href: "/dashboard/tasks", label: "Задания", icon: CheckIcon },
+  { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
+  { href: "/dashboard/transfers", label: "Переводы", icon: DoubleArrowLeftIcon },
+  { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
+  { href: "/dashboard/investments", label: "Инвестиции", icon: StarFilledIcon },
 ];
 
 export function Sidebar() {
@@ -63,14 +62,14 @@ export function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           className="p-1.5 rounded-md hover:bg-accent transition-colors"
         >
-          {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          <LayoutIcon className="w-4 h-4" />
         </button>
       </div>
 
       {!collapsed && (
         <div className="px-4 py-3 border-b">
           <div className="flex items-center gap-2 mb-1.5">
-            <Star className="w-3.5 h-3.5 text-amber-500" />
+            <StarFilledIcon className="w-3.5 h-3.5 text-amber-500" />
             <span className="text-xs font-medium">Уровень {level}</span>
           </div>
           <Progress value={nextXp > 0 ? (currentXp / nextXp) * 100 : 100} className="h-1.5" />
@@ -88,7 +87,7 @@ export function Sidebar() {
                 : "text-emerald-500/70 hover:text-emerald-500 hover:bg-emerald-500/5"
             }`}
           >
-            <Moon className="w-4 h-4 flex-shrink-0 fill-emerald-500/20" />
+            <MoonIcon className="w-4 h-4 flex-shrink-0 fill-emerald-500/20" />
             {!collapsed && <span className="truncate">Курбан-байрам</span>}
           </Link>
         )}
@@ -115,7 +114,7 @@ export function Sidebar() {
                   {isLocked && (
                     <div className="ml-auto flex items-center gap-1">
                       <span className="text-[10px] bg-zinc-800 px-1 rounded text-zinc-500">Lvl {requiredLevel}</span>
-                      <Lock className="w-3 h-3 text-zinc-600" />
+                      <LockClosedIcon className="w-3 h-3 text-zinc-600" />
                     </div>
                   )}
                 </>
@@ -130,14 +129,14 @@ export function Sidebar() {
           href="/dashboard/settings"
           className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
         >
-          <Settings className="w-4 h-4 flex-shrink-0" />
+          <GearIcon className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Настройки</span>}
         </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-accent/50 transition-colors w-full"
         >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
+          <ExitIcon className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Выйти</span>}
         </button>
       </div>

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { WebGLGuard, HeroShaderFallback } from "@/components/hero-shader";
-import { ArrowRight, Shield, Zap, Gift, CreditCard, Smartphone, Percent, Check, ChevronRight, Menu, X } from "lucide-react";
+import { ArrowRightIcon, LockClosedIcon, LightningBoltIcon, ArchiveIcon, IdCardIcon, MobileIcon, PieChartIcon, CheckIcon, ChevronRightIcon, HamburgerMenuIcon, Cross1Icon } from "@radix-ui/react-icons";
 
 const DynamicShader = dynamic(() => import("@/components/dynamic-shader"), { ssr: false });
 
@@ -29,12 +29,12 @@ export default function LandingPage() {
   if (isMobile) return null;
 
   const features = [
-    { icon: Zap, title: "Переводы за 0 секунд", description: "Деньги исчезают моментально. Куда? Это уже не наши проблемы." },
-    { icon: Percent, title: "Кэшбэк до 15%", description: "Возвращаем маннрубли. Что такое маннрубли? Не спрашивайте." },
-    { icon: Gift, title: "Бонусы за страдания", description: "Выполняйте задания. Получайте баллы. Плачьте от счастья." },
-    { icon: Shield, title: "Безопасность уровня «надеюсь»", description: "256-битное шифрование. Мы сами его придумали. Оно точно работает." },
-    { icon: CreditCard, title: "11 уровней карт", description: "От Bronze до Obsidian. Вы всё ещё на Bronze. Нам смешно." },
-    { icon: Smartphone, title: "Мобильное приложение", description: "Управляйте финансами. Или пытайтесь. Кто мы такие, чтобы судить." },
+    { icon: LightningBoltIcon, title: "Переводы за 0 секунд", description: "Деньги исчезают моментально. Куда? Это уже не наши проблемы." },
+    { icon: PieChartIcon, title: "Кэшбэк до 15%", description: "Возвращаем маннрубли. Что такое маннрубли? Не спрашивайте." },
+    { icon: ArchiveIcon, title: "Бонусы за страдания", description: "Выполняйте задания. Получайте баллы. Плачьте от счастья." },
+    { icon: LockClosedIcon, title: "Безопасность уровня «надеюсь»", description: "256-битное шифрование. Мы сами его придумали. Оно точно работает." },
+    { icon: IdCardIcon, title: "11 уровней карт", description: "От Bronze до Obsidian. Вы всё ещё на Bronze. Нам смешно." },
+    { icon: MobileIcon, title: "Мобильное приложение", description: "Управляйте финансами. Или пытайтесь. Кто мы такие, чтобы судить." },
   ];
 
   const tiers = [
@@ -114,7 +114,7 @@ export default function LandingPage() {
             <Link href="/login"><Button variant="gradient" size="sm" className="btn-shader">Войти (зачем?)</Button></Link>
           </nav>
           <button className="lg:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {menuOpen ? <Cross1Icon className="w-5 h-5" /> : <HamburgerMenuIcon className="w-5 h-5" />}
           </button>
         </div>
         {menuOpen && (
@@ -143,7 +143,7 @@ export default function LandingPage() {
               Мгновенные переводы, кэшбэк до 15%, бонусы за каждое действие. Всё в одном приложении. Кроме ваших денег.
             </p>
             <div className="flex gap-3">
-              <Link href="/login"><Button variant="gradient" size="lg" className="gap-2 btn-shader">Открыть счёт (не надо) <ArrowRight className="w-4 h-4" /></Button></Link>
+              <Link href="/login"><Button variant="gradient" size="lg" className="gap-2 btn-shader">Открыть счёт (не надо) <ArrowRightIcon className="w-4 h-4" /></Button></Link>
               <a href="#features"><Button size="lg" variant="outline" className="btn-shader btn-shader-outline">Узнать больше (не стоит)</Button></a>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function LandingPage() {
               <Card key={t.name} className="flex flex-col transition-all hover:shadow-lg hover:shadow-black/20">
                 <CardHeader>
                   <div className={`w-12 h-12 rounded-lg bg-gradient-to-b ${t.gradient} flex items-center justify-center mb-3 shadow-[0_1px_0_0_rgba(255,255,255,0.15)_inset,0_2px_4px_0_rgba(0,0,0,0.2)]`}>
-                    <CreditCard className="w-6 h-6 text-white/80" />
+                    <IdCardIcon className="w-6 h-6 text-white/80" />
                   </div>
                   <CardTitle>{t.name}</CardTitle>
                   <CardDescription>{t.price}</CardDescription>
@@ -192,7 +192,7 @@ export default function LandingPage() {
                     <p className="text-xs text-muted-foreground">кэшбэк (может быть)</p>
                   </div>
                   <p className="text-xs text-muted-foreground mb-3 italic">{t.desc}</p>
-                  <Link href="/login"><Button variant="gradient" className="w-full gap-1.5 btn-shader" size="sm">Оформить (нет) <ChevronRight className="w-3.5 h-3.5" /></Button></Link>
+                  <Link href="/login"><Button variant="gradient" className="w-full gap-1.5 btn-shader" size="sm">Оформить (нет) <ChevronRightIcon className="w-3.5 h-3.5" /></Button></Link>
                 </CardContent>
               </Card>
             ))}
@@ -265,7 +265,7 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-2">Всё ещё хотите начать?</h2>
           <p className="text-muted-foreground mb-6">Откройте счёт за 5 минут и получите 1 000 МР. Которые нельзя вывести. Но зато получите.</p>
-          <Link href="/login"><Button variant="gradient" size="lg" className="gap-2 btn-shader">Открыть счёт (мы предупреждали) <ArrowRight className="w-4 h-4" /></Button></Link>
+          <Link href="/login"><Button variant="gradient" size="lg" className="gap-2 btn-shader">Открыть счёт (мы предупреждали) <ArrowRightIcon className="w-4 h-4" /></Button></Link>
         </div>
       </section>
 

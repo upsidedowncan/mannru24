@@ -1,4 +1,6 @@
-import { Wifi } from "lucide-react";
+"use client";
+
+import { BoxIcon } from "@radix-ui/react-icons";
 import type { CardTier } from "@/lib/db";
 
 interface BankCardProps {
@@ -29,7 +31,7 @@ export function BankCard({ tier, number, holder, balance, expiry, emojiCode }: B
   const style = tierMeta[tier];
 
   return (
-    <div className={`relative overflow-hidden rounded-xl p-5 w-[300px] aspect-[1.586/1] flex flex-col justify-between ${style.gradient} ring-1 ${style.ring} shadow-xl`}>
+    <div className={`relative overflow-hidden rounded-xl p-5 w-full max-w-[300px] aspect-[1.586/1] flex flex-col justify-between ${style.gradient} ring-1 ${style.ring} shadow-xl`}>
       <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full border opacity-20" />
       <div className="absolute -bottom-12 -left-8 w-40 h-40 rounded-full border opacity-10" />
 
@@ -43,7 +45,7 @@ export function BankCard({ tier, number, holder, balance, expiry, emojiCode }: B
             <span className="text-lg">{emojiCode}</span>
           </div>
         )}
-        {!emojiCode && <Wifi className={`w-5 h-5 ${style.subtext} rotate-90`} />}
+        {!emojiCode && <BoxIcon className={`w-5 h-5 ${style.subtext} rotate-90`} />}
       </div>
 
       <div className="relative z-10">

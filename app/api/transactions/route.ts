@@ -99,10 +99,47 @@ export async function POST(req: NextRequest) {
 
   const db = readDb();
   const body = await req.json();
+  const user = db.users.find(u => u.id === currentUser.id);
+  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404, headers: corsHeaders });
+
+  // Security: Check for positive amounts (deposits)
+  if (body.amount > 0) {
+    if (body.name === "Ежедневная подачка") {
+      const now = new Date();
+      if (user.lastDailyClaim) {
+        const lastClaim = new Date(user.lastDailyClaim);
+        if (now.getTime() - lastClaim.getTime() < 24 * 60 * 60 * 1000) {
+          return NextResponse.json({ error: "Daily reward already claimed. Wait 24h." }, { status: 429, headers: corsHeaders });
+        }
+      }
+      // Cap the amount to prevent client-side manipulation
+      if (body.amount > 100) body.amount = 60;
+      user.lastDailyClaim = now.toISOString();
+    } else {
+      // Prevent other positive transactions from client
+      return NextResponse.json({ error: "Invalid transaction amount" }, { status: 400, headers: corsHeaders });
+    }
+  }
 
   if (body.category === "Переводы" && body.emojiCode) {
     if (!/^[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]{4}$/u.test(body.emojiCode)) {
        return NextResponse.json({ error: "Invalid emoji code. Exactly 4 emojis required." }, { status: 400, headers: corsHeaders });
+    }
+
+    // Logic for transferring money to another card
+    const recipientCard = db.cards.find(c => c.emojiCode === body.emojiCode);
+    if (recipientCard) {
+      recipientCard.balance += Math.abs(body.amount);
+      // Create a transaction for the recipient
+      db.transactions.unshift({
+        id: crypto.randomUUID(),
+        userId: recipientCard.userId,
+        name: `Перевод от ${user.name}`,
+        category: "Переводы",
+        amount: Math.abs(body.amount),
+        date: new Date().toLocaleString("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
+        cardId: recipientCard.id,
+      });
     }
   }
 
@@ -134,6 +171,8 @@ export async function POST(req: NextRequest) {
         tx.description = (tx.description || "") + " (Включая комиссию 6%)";
       }
       card.balance += finalDeduction;
+    } else {
+       return NextResponse.json({ error: "Card not found or ownership mismatch" }, { status: 403, headers: corsHeaders });
     }
   }
 
@@ -147,7 +186,6 @@ export async function POST(req: NextRequest) {
   const completedTasks = updateTasksForTransaction(db, currentUser.id, tx);
   writeDb(db);
 
-  const user = db.users.find(u => u.id === currentUser.id);
   const { level, currentXp, nextXp } = calculateLevel(user?.xp || 0);
 
   return NextResponse.json({ transaction: tx, completedTasks, levelUps: txLevelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201, headers: corsHeaders });

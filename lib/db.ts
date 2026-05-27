@@ -76,6 +76,7 @@ export interface UserProfile {
   level: number;
   xp: number;
   clickHistory: ClickRecord[];
+  lastDailyClaim?: string;
   claimedGifts?: string[];
   mnkHoldings?: number;
   isBanned?: boolean;

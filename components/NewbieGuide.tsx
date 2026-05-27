@@ -10,9 +10,8 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Rocket, Target, ShieldCheck, Zap, Ghost } from "lucide-react";
+import { RocketIcon, TargetIcon, CheckCircledIcon, LightningBoltIcon, EyeNoneIcon } from "@radix-ui/react-icons";
 
 export function NewbieGuide() {
   const [open, setOpen] = useState(false);
@@ -34,7 +33,7 @@ export function NewbieGuide() {
       <DialogContent className="sm:max-w-[500px] bg-zinc-950 border-zinc-800 text-zinc-100">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <Ghost className="w-6 h-6 text-blue-500" />
+            <EyeNoneIcon className="w-6 h-6 text-blue-500" />
             Добро пожаловать в Систему
           </DialogTitle>
           <DialogDescription className="text-zinc-500">
@@ -46,7 +45,7 @@ export function NewbieGuide() {
           <div className="space-y-6 py-4">
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-800">
-                <Target className="w-5 h-5 text-emerald-500" />
+                <TargetIcon className="w-5 h-5 text-emerald-500" />
               </div>
               <div>
                 <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">Ваш статус — ничто</h4>
@@ -58,7 +57,7 @@ export function NewbieGuide() {
 
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-800">
-                <Rocket className="w-5 h-5 text-blue-500" />
+                <RocketIcon className="w-5 h-5 text-blue-500" />
               </div>
               <div>
                 <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">Как получать XP</h4>
@@ -70,7 +69,7 @@ export function NewbieGuide() {
 
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-800">
-                <ShieldCheck className="w-5 h-5 text-purple-500" />
+                <CheckCircledIcon className="w-5 h-5 text-purple-500" />
               </div>
               <div>
                 <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">Безопасность (ха-ха)</h4>

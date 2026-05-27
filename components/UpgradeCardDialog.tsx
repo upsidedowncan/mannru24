@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ChevronUp, CreditCard } from "lucide-react";
+import { ArrowTopRightIcon, ChevronUpIcon, IdCardIcon } from "@radix-ui/react-icons";
 import type { CardTier } from "@/lib/db";
 import { tierMeta } from "@/components/BankCard";
 
@@ -29,6 +29,7 @@ const upgradeCosts: Record<CardTier, number> = {
   diamond: 12000,
   black: 20000,
   obsidian: 50000,
+  rewards: 0,
 };
 
 export function UpgradeCardDialog({ card, allCards, onUpgraded }: UpgradeCardDialogProps) {
@@ -75,7 +76,7 @@ export function UpgradeCardDialog({ card, allCards, onUpgraded }: UpgradeCardDia
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="secondary" size="sm" className="gap-1.5">
-          <ChevronUp className="w-3.5 h-3.5" />
+          <ChevronUpIcon className="w-3.5 h-3.5" />
           Улучшить
         </Button>
       </DialogTrigger>
@@ -99,7 +100,7 @@ export function UpgradeCardDialog({ card, allCards, onUpgraded }: UpgradeCardDia
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-lg ${meta.gradient} ring-1 ${meta.ring} flex items-center justify-center`}>
-                      <CreditCard className="w-5 h-5 text-white/80" />
+                      <IdCardIcon className="w-5 h-5 text-white/80" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
@@ -170,7 +171,7 @@ export function UpgradeCardDialog({ card, allCards, onUpgraded }: UpgradeCardDia
             <DialogFooter className="flex gap-2 sm:gap-2">
               <Button variant="outline" onClick={() => setNewTier(null)}>Назад</Button>
               <Button variant="gradient" onClick={handleUpgrade} disabled={loading || !sourceCard}>
-                {loading ? "Улучшение..." : "Улучшить"} <ArrowUpRight className="w-4 h-4" />
+                {loading ? "Улучшение..." : "Улучшить"} <ArrowTopRightIcon className="w-4 h-4" />
               </Button>
             </DialogFooter>
           </div>
