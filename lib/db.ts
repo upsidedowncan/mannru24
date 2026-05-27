@@ -117,6 +117,7 @@ export interface Database {
   allowedOAuthDomains: string[];
   oauthApps: OAuthApp[];
   mnkMarket?: MnkMarket;
+  charityBalance?: number;
 }
 
 function getDefaultDb(): Database {
@@ -128,6 +129,7 @@ function getDefaultDb(): Database {
     bonuses: [],
     allowedOAuthDomains: [],
     oauthApps: [],
+    charityBalance: 0,
   };
 }
 
@@ -208,6 +210,7 @@ export function readDb(): Database {
     }
     if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
     if (!data.oauthApps) data.oauthApps = [];
+    if (data.charityBalance === undefined) data.charityBalance = 0;
     return data as Database;
   } catch (e) {
     return getDefaultDb();

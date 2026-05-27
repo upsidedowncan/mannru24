@@ -30,6 +30,12 @@ export async function POST(req: Request) {
     if (!user || !card) return NextResponse.json({ error: "User or Card not found" }, { status: 404 });
     if (card.balance < bet) return NextResponse.json({ error: "Insufficient funds" }, { status: 400 });
 
+    // Deduct bet immediately
+    card.balance -= bet;
+    user.totalSpent += bet;
+    logClick(db, user.id, `Начал игру в рулетку: -${bet} МР`);
+    writeDb(db);
+
     const participants = [
       { id: "player", name: "Вы", isBot: false, isDead: false },
       { id: "bot1", name: "Кибер-Борис", isBot: true, isDead: false },
@@ -54,7 +60,8 @@ export async function POST(req: Request) {
         participants,
         turnIndex: 0,
         chamber: 0
-      }
+      },
+      newBalance: card.balance
     });
   }
 
@@ -75,7 +82,6 @@ export async function POST(req: Request) {
     let actualMove = move;
     let actualTargetId = targetId;
 
-    // If it's a bot's turn, we ignore client input and decide server-side
     if (shooter.isBot) {
       actualMove = Math.random() > 0.3 ? "shoot" : "pass";
       if (actualMove === "shoot") {
@@ -125,16 +131,12 @@ export async function POST(req: Request) {
 
       if (user && card) {
         if (gameResult === "won") {
-          card.balance += state.bet;
-          user.totalEarned += state.bet;
-          logClick(db, user.id, `Выиграл в рулетку: +${state.bet} МР`);
-        } else {
-          const deduction = Math.min(card.balance, state.bet);
-          card.balance -= deduction;
-          user.totalSpent += deduction;
-          logClick(db, user.id, `Проиграл в рулетку: -${deduction} МР`);
+          // Double payout: we already deducted 'bet', so we give back 2*bet
+          card.balance += state.bet * 2;
+          user.totalEarned += state.bet * 2;
+          logClick(db, user.id, `Выиграл в рулетку: +${state.bet * 2} МР`);
+          writeDb(db);
         }
-        writeDb(db);
       }
 
       return NextResponse.json({

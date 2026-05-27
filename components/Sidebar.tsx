@@ -31,7 +31,7 @@ const navItems = [
   { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
   { href: "/dashboard/transfers", label: "Переводы", icon: DoubleArrowLeftIcon },
   { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
-  { href: "/dashboard/games", label: "Игры", icon: RocketIcon },
+  { href: "/dashboard/games", label: "Развлечения", icon: RocketIcon },
   { href: "/dashboard/investments", label: "Инвестиции", icon: StarFilledIcon },
 ];
 
