@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, Smile, Copy, Check, Lock, AlertCircle, Trash2, Plus } from "lucide-react";
+import { ArrowUpRight, Smile, Copy, Check, Lock, AlertCircle, Trash2, Plus, Info } from "lucide-react";
 import { withAccess } from "@/components/AccessGuard";
 import { CreateCardDialog } from "@/components/CreateCardDialog";
 import type { Transaction, Card as CardType } from "@/lib/db";
@@ -22,6 +22,7 @@ function TransfersPage() {
   const [cards, setCards] = useState<CardType[]>([]);
   const [amount, setAmount] = useState("");
   const [emojiCode, setEmojiCode] = useState("");
+  const [sourceCardId, setSourceCardId] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
@@ -44,7 +45,11 @@ function TransfersPage() {
       const cardsData = await cardsRes.json();
       const txData = await txRes.json();
 
-      setCards(Array.isArray(cardsData) ? cardsData : []);
+      const fetchedCards = Array.isArray(cardsData) ? cardsData : [];
+      setCards(fetchedCards);
+      if (fetchedCards.length > 0 && !sourceCardId) {
+        setSourceCardId(fetchedCards[0].id);
+      }
       setTransactions(Array.isArray(txData) ? txData : []);
     };
     fetchData();
@@ -58,6 +63,11 @@ function TransfersPage() {
   }, [emojiCode]);
 
   const isValid = emojiArray.length === 4;
+
+  const selectedSourceCard = cards.find(c => c.id === sourceCardId);
+  const isRewardsSource = selectedSourceCard?.tier === "rewards";
+  const commission = isRewardsSource ? Math.round(parseFloat(amount || "0") * 0.06) : 0;
+  const totalDeduction = parseFloat(amount || "0") + commission;
 
   const handleSend = async () => {
     if (!isValid || !amount) {
@@ -73,7 +83,8 @@ function TransfersPage() {
         name: `Перевод по коду ${emojiCode}`,
         category: "Переводы",
         amount: -parseFloat(amount),
-        emojiCode
+        emojiCode,
+        cardId: sourceCardId
       }),
     });
     const data = await res.json();
@@ -157,17 +168,44 @@ function TransfersPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="text-zinc-400">Сумма</Label>
-            <div className="relative">
-              <Input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0"
-                className="bg-zinc-900 border-zinc-800 text-white text-2xl font-bold pr-12 h-14 focus:ring-blue-500/20"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-lg font-mono">MR</span>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Списать с карты</Label>
+              <select
+                value={sourceCardId}
+                onChange={(e) => setSourceCardId(e.target.value)}
+                className="w-full h-12 bg-zinc-900 border border-zinc-800 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none"
+              >
+                {cards.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {tierMeta[c.tier]?.label || c.tier} ••{c.number.slice(-4)} ({c.balance.toLocaleString()} MR)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Сумма перевода</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0"
+                  className="bg-zinc-900 border-zinc-800 text-white text-2xl font-bold pr-12 h-14 focus:ring-blue-500/20"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-lg font-mono">MR</span>
+              </div>
+
+              {isRewardsSource && amount && (
+                <div className="mt-2 flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <Info className="w-4 h-4 text-amber-500" />
+                  <div className="text-xs text-amber-200/80">
+                    <p>Комиссия за перевод с Карты Подарков: <span className="text-amber-500 font-bold">{commission} MR (6%)</span></p>
+                    <p>Всего будет списано: <span className="font-bold">{totalDeduction} MR</span></p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

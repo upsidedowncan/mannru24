@@ -8,7 +8,7 @@ export { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel };
 // On Amvera, /data is the persistent mount point.
 const DB_PATH = process.env.NODE_ENV === "production" ? "/data/db.json" : join(process.cwd(), "data", "db.json");
 
-export type CardTier = "bronze" | "silver" | "gold" | "platinum" | "titanium" | "ruby" | "emerald" | "sapphire" | "diamond" | "black" | "obsidian";
+export type CardTier = "bronze" | "silver" | "gold" | "platinum" | "titanium" | "ruby" | "emerald" | "sapphire" | "diamond" | "black" | "obsidian" | "rewards";
 
 export interface Card {
   id: string;
@@ -32,6 +32,7 @@ export interface Transaction {
   cardId?: string;
   emojiCode?: string | null;
   source?: string;
+  description?: string;
 }
 
 export interface Task {

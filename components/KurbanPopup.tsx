@@ -61,7 +61,7 @@ export function KurbanPopup() {
 
           <Button
             onClick={goToEvent}
-            variant="gradient"
+            variant="emerald"
             className="w-full gap-2 h-12 text-base shadow-[0_0_20px_rgba(16,185,129,0.2)]"
           >
             Получить подарки <Gift className="w-4 h-4" />

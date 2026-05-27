@@ -22,6 +22,7 @@ export const tierMeta: Record<CardTier, { label: string; gradient: string; textC
   diamond: { label: "Diamond", gradient: "bg-gradient-to-br from-cyan-300 via-sky-200 to-cyan-400", textColor: "text-sky-950", subtext: "text-sky-700", ring: "ring-cyan-400/30", accent: "text-cyan-600", price: "2 999 МР/мес", cashback: "10%" },
   black: { label: "Black", gradient: "bg-gradient-to-br from-zinc-800 via-zinc-900 to-black", textColor: "text-white", subtext: "text-zinc-400", ring: "ring-zinc-600/30", accent: "text-zinc-300", price: "4 999 МР/мес", cashback: "12%" },
   obsidian: { label: "Obsidian", gradient: "bg-gradient-to-br from-violet-900 via-purple-950 to-black", textColor: "text-white", subtext: "text-violet-300", ring: "ring-violet-700/30", accent: "text-violet-400", price: "9 999 МР/мес", cashback: "15%" },
+  rewards: { label: "Карта Подарков", gradient: "bg-gradient-to-br from-emerald-600 via-emerald-500 to-amber-500", textColor: "text-white", subtext: "text-emerald-100/70", ring: "ring-emerald-400/40", accent: "text-amber-300", price: "Акция", cashback: "Спец" },
 };
 
 export function BankCard({ tier, number, holder, balance, expiry, emojiCode }: BankCardProps) {

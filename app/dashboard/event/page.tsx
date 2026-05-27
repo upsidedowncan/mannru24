@@ -201,7 +201,7 @@ export default function EventPage() {
                 <Button
                   onClick={startCalculation}
                   disabled={calculating}
-                  variant="gradient"
+                  variant="emerald"
                   className="w-full max-w-xs h-14 text-lg font-bold shadow-[0_0_30px_rgba(16,185,129,0.2)]"
                 >
                   {calculating ? <RefreshCw className="w-5 h-5 animate-spin" /> : "Запустить расчет барашков"}
@@ -269,7 +269,7 @@ export default function EventPage() {
                       <Button
                         onClick={claimGift}
                         disabled={claiming}
-                        variant="gradient"
+                        variant="emerald"
                         className="w-full max-w-xs h-16 text-xl font-black gap-3 shadow-[0_10px_40px_rgba(16,185,129,0.3)]"
                       >
                         {claiming ? <RefreshCw className="w-6 h-6 animate-spin" /> : (
