@@ -7,15 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, Smile, Copy, Check, Lock, AlertCircle, Trash2, Plus, Info } from "lucide-react";
+import {
+  ArrowTopRightIcon,
+  FaceIcon,
+  CopyIcon,
+  CheckIcon,
+  LockClosedIcon,
+  ExclamationTriangleIcon,
+  TrashIcon,
+  PlusIcon,
+  InfoCircledIcon,
+} from "@radix-ui/react-icons";
 import { withAccess } from "@/components/AccessGuard";
 import { CreateCardDialog } from "@/components/CreateCardDialog";
 import type { Transaction, Card as CardType } from "@/lib/db";
 import { tierMeta } from "@/components/BankCard";
 import { useProgression } from "@/lib/progression";
 import { useRouter } from "next/navigation";
-
-const quickEmojis = ["🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁","🦒","🐼","🐦","🦁"];
 
 function TransfersPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -53,12 +61,9 @@ function TransfersPage() {
       setTransactions(Array.isArray(txData) ? txData : []);
     };
     fetchData();
-  }, [router]);
+  }, [router, sourceCardId]);
 
-  // Validation: Address consists strictly of 4 emojis
-  // We use a simple length check and emoji splitting for the UI
   const emojiArray = useMemo(() => {
-    // This is a naive split, but good enough for the UI mask
     return Array.from(emojiCode);
   }, [emojiCode]);
 
@@ -129,7 +134,7 @@ function TransfersPage() {
         <Card className="border-emerald-500/50 bg-emerald-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><Smile className="w-5 h-5 text-emerald-500" /></div>
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><FaceIcon className="w-5 h-5 text-emerald-500" /></div>
               <div><p className="font-medium text-emerald-500">Задание выполнено!</p><p className="text-sm text-muted-foreground">Вам начислены бонусные баллы</p></div>
             </div>
           </CardContent>
@@ -149,7 +154,7 @@ function TransfersPage() {
               ))}
               {emojiArray.length > 0 && (
                  <Button variant="ghost" size="icon" onClick={() => setEmojiCode("")} className="h-14 w-14 rounded-xl border border-zinc-900 hover:bg-zinc-900">
-                   <Trash2 className="w-5 h-5 text-zinc-500" />
+                   <TrashIcon className="w-5 h-5 text-zinc-500" />
                  </Button>
               )}
             </div>
@@ -199,7 +204,7 @@ function TransfersPage() {
 
               {isRewardsSource && amount && (
                 <div className="mt-2 flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <Info className="w-4 h-4 text-amber-500" />
+                  <InfoCircledIcon className="w-4 h-4 text-amber-500" />
                   <div className="text-xs text-amber-200/80">
                     <p>Комиссия за перевод с Карты Подарков: <span className="text-amber-500 font-bold">{commission} MR (6%)</span></p>
                     <p>Всего будет списано: <span className="font-bold">{totalDeduction} MR</span></p>
@@ -211,7 +216,7 @@ function TransfersPage() {
 
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              <AlertCircle className="w-4 h-4" />
+              <ExclamationTriangleIcon className="w-4 h-4" />
               {error}
             </div>
           )}
@@ -224,7 +229,7 @@ function TransfersPage() {
             onClick={handleSend}
             disabled={sending || !amount || !isValid || isReadOnly}
           >
-            {sending ? "Транзакция..." : `Перевести ${amount || 0} MR`} <ArrowUpRight className="ml-2 w-5 h-5" />
+            {sending ? "Транзакция..." : `Перевести ${amount || 0} MR`} <ArrowTopRightIcon className="ml-2 w-5 h-5" />
           </Button>
         </CardContent>
       </Card>
@@ -242,7 +247,7 @@ function TransfersPage() {
                 </div>
               </div>
               <Button variant="outline" size="sm" className="bg-zinc-950 border-zinc-800 hover:bg-zinc-900 text-zinc-300" onClick={() => card.emojiCode && copyCode(card.emojiCode, card.id)}>
-                {copiedId === card.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedId === card.id ? <CheckIcon className="w-3.5 h-3.5 text-emerald-500" /> : <CopyIcon className="w-3.5 h-3.5" />}
                 {copiedId === card.id ? "Ок" : "Копи"}
               </Button>
             </div>
@@ -252,7 +257,7 @@ function TransfersPage() {
               {basicCards.map((card) => (
                 <div key={card.id} className="flex items-center justify-between p-4 rounded-xl border border-zinc-900 bg-zinc-900/20 opacity-40">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center"><Lock className="w-5 h-5 text-zinc-700" /></div>
+                    <div className="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center"><LockClosedIcon className="w-5 h-5 text-zinc-700" /></div>
                     <div>
                       <p className="text-sm font-bold text-zinc-500">{card.holder}</p>
                       <p className="text-xs text-zinc-600 uppercase tracking-widest">{tierMeta[card.tier].label} ••{card.number.slice(-4)}</p>

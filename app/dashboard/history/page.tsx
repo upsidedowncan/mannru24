@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowBottomLeftIcon, ArrowTopRightIcon } from "@radix-ui/react-icons";
 import type { Transaction } from "@/lib/db";
 import { useRouter } from "next/navigation";
 
@@ -64,7 +64,7 @@ function HistoryPage() {
                       <div className="flex items-center justify-between py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.amount > 0 ? "bg-emerald-500/10" : "bg-secondary"}`}>
-                            {tx.amount > 0 ? <ArrowDownLeft className="w-4 h-4 text-emerald-500" /> : <ArrowUpRight className="w-4 h-4 text-muted-foreground" />}
+                            {tx.amount > 0 ? <ArrowBottomLeftIcon className="w-4 h-4 text-emerald-500" /> : <ArrowTopRightIcon className="w-4 h-4 text-muted-foreground" />}
                           </div>
                           <div><p className="text-sm font-medium">{tx.name}</p><p className="text-xs text-muted-foreground">{tx.category}</p></div>
                         </div>

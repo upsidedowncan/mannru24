@@ -1,78 +1,75 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Moon, Star, Gift, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { isEventActive } from "@/lib/events";
-import { motion } from "framer-motion";
+import { MoonIcon, StarFilledIcon, ArchiveIcon, Cross2Icon } from "@radix-ui/react-icons";
+import { useProgression } from "@/lib/progression";
 
 export function KurbanPopup() {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
+  const { xp } = useProgression();
 
   useEffect(() => {
-    if (!isEventActive("kurban")) return;
-
-    const hasSeen = sessionStorage.getItem("kurban-popup-seen");
-    if (!hasSeen) {
-      const timer = setTimeout(() => {
-        setOpen(true);
-        sessionStorage.setItem("kurban-popup-seen", "true");
-      }, 2000);
-      return () => clearTimeout(timer);
+    const shown = sessionStorage.getItem("kurban_popup_shown");
+    if (!shown) {
+      setOpen(true);
+      sessionStorage.setItem("kurban_popup_shown", "true");
     }
   }, []);
 
-  const goToEvent = () => {
-    setOpen(false);
-    router.push("/dashboard/event");
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-sm bg-zinc-950 border-emerald-900/50 p-0 overflow-hidden">
-        <DialogTitle className="sr-only">Курбан-байрам</DialogTitle>
-        <div className="relative p-6 flex flex-col items-center text-center">
-          <button
-            onClick={() => setOpen(false)}
-            className="absolute right-4 top-4 text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
-          <div className="mb-6 relative">
-             <motion.div
-               animate={{ rotate: [0, 10, -10, 0] }}
-               transition={{ duration: 4, repeat: Infinity }}
-               className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20"
-             >
-               <Moon className="w-10 h-10 text-emerald-500 fill-emerald-500" />
-             </motion.div>
-             <Star className="w-4 h-4 text-emerald-400 absolute -top-1 -right-1 animate-pulse" />
-             <Star className="w-3 h-3 text-emerald-400 absolute bottom-2 -left-2 animate-bounce" />
+      <DialogContent className="max-w-md bg-emerald-950 border-emerald-800 text-emerald-50">
+        <DialogHeader>
+          <div className="flex justify-center mb-4">
+            <div className="w-20 h-20 rounded-full bg-emerald-900 flex items-center justify-center border-4 border-emerald-800 shadow-2xl relative">
+              <MoonIcon className="w-10 h-10 text-yellow-400" />
+              <StarFilledIcon className="w-4 h-4 text-yellow-400 absolute top-4 right-4 animate-pulse" />
+            </div>
           </div>
+          <DialogTitle className="text-2xl font-bold text-center text-emerald-100">
+            Курбан Байрам в Маннру! 🐏
+          </DialogTitle>
+          <DialogDescription className="text-emerald-400 text-center text-sm mt-2">
+            Празднуйте с нами и получайте щедрые награды в МР и XP.
+          </DialogDescription>
+        </DialogHeader>
 
-          <h2 className="text-2xl font-bold text-white mb-2">Курбан-байрам в Маннру!</h2>
-          <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-            Поздравляем со светлым праздником! Мы подготовили для вас специальные подарки и предложения в новом разделе.
+        <div className="space-y-4 py-4 text-center">
+          <p className="text-sm leading-relaxed">
+            В честь праздника мы запустили специальный «Калькулятор Баранов». Чем выше ваш уровень и активность, тем больше праздничных выплат вы получите!
           </p>
-
-          <Button
-            onClick={goToEvent}
-            variant="emerald"
-            className="w-full gap-2 h-12 text-base shadow-[0_0_20px_rgba(16,185,129,0.2)]"
-          >
-            Получить подарки <Gift className="w-4 h-4" />
-          </Button>
-
-          <p className="mt-4 text-[10px] text-zinc-600 uppercase tracking-widest font-mono">
-            Акция действует до 30 мая
-          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 bg-emerald-900/50 rounded-lg border border-emerald-700/50">
+              <p className="text-xs text-emerald-400 uppercase font-bold">Ваш вклад</p>
+              <p className="text-xl font-bold text-yellow-400">{xp} XP</p>
+            </div>
+            <div className="p-3 bg-emerald-900/50 rounded-lg border border-emerald-700/50">
+              <p className="text-xs text-emerald-400 uppercase font-bold">Статус</p>
+              <p className="text-xl font-bold text-yellow-400">Активен</p>
+            </div>
+          </div>
         </div>
 
-        <div className="h-1 w-full bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50" />
+        <div className="flex flex-col gap-2">
+          <Button
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-emerald-950 font-black py-6 gap-2"
+            onClick={() => {
+              window.location.href = "/dashboard/event";
+              setOpen(false);
+            }}
+          >
+            Получить подарки <ArchiveIcon className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            className="text-emerald-400 hover:text-emerald-100 hover:bg-emerald-900/50"
+            onClick={() => setOpen(false)}
+          >
+            Закрыть
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -6,12 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Target, Zap, Gift, Trophy, Clock, CheckCircle2, Sparkles } from "lucide-react";
+import {
+  TargetIcon,
+  LightningBoltIcon,
+  ArchiveIcon,
+  BackpackIcon,
+  ClockIcon,
+  CheckCircledIcon,
+  MagicWandIcon,
+} from "@radix-ui/react-icons";
 import { withAccess } from "@/components/AccessGuard";
 import type { Task } from "@/lib/db";
 import { useRouter } from "next/navigation";
 
-const iconMap: Record<string, typeof Target> = { Target, Zap, Gift, Trophy, Clock };
+const iconMap: Record<string, any> = {
+  daily: LightningBoltIcon,
+  weekly: BackpackIcon,
+  special: TargetIcon,
+};
 
 function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -56,7 +68,7 @@ function TasksPage() {
         <Card className="border-emerald-500/50 bg-emerald-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><Sparkles className="w-5 h-5 text-emerald-500" /></div>
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><MagicWandIcon className="w-5 h-5 text-emerald-500" /></div>
               <div>
                 <p className="font-medium text-emerald-500">{toast}</p>
                 <p className="text-sm text-muted-foreground">Бонусные баллы начислены на ваш счёт</p>
@@ -83,13 +95,13 @@ function TasksPage() {
               <div className="space-y-4">
                 {(tab === "all" ? tasks : tasks.filter((t) => t.type === tab)).map((task) => {
                   const pct = Math.min((task.progress / task.total) * 100, 100);
-                  const Icon = iconMap[task.type] || Target;
+                  const Icon = iconMap[task.type] || TargetIcon;
                   return (
                     <Card key={task.id} className={task.completed ? "border-emerald-500/50" : ""}>
                       <CardContent className="pt-6">
                         <div className="flex items-start gap-4">
                           <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                            {task.completed ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Icon className="w-5 h-5" />}
+                            {task.completed ? <CheckCircledIcon className="w-5 h-5 text-emerald-500" /> : <Icon className="w-5 h-5" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-4">

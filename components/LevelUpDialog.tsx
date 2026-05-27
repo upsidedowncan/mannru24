@@ -5,7 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Star, CreditCard, LayoutDashboard, X, Skull, Terminal, AlertTriangle } from "lucide-react";
+import {
+  MagicWandIcon,
+  StarFilledIcon,
+  CardStackIcon,
+  DashboardIcon,
+  Cross2Icon,
+  EyeNoneIcon,
+  CodeIcon,
+  ExclamationTriangleIcon,
+} from "@radix-ui/react-icons";
 import { useProgression } from "@/lib/progression";
 
 interface Particle {
@@ -71,7 +80,7 @@ export function LevelUpDialog() {
           onClick={handleClose}
           className="absolute right-4 top-4 z-10 p-1 rounded-full hover:bg-accent transition-colors"
         >
-          <X className="w-4 h-4" />
+          <Cross2Icon className="w-4 h-4" />
         </button>
 
         <div className="relative">
@@ -83,7 +92,7 @@ export function LevelUpDialog() {
                  transition={{ duration: 2, repeat: Infinity }}
                  className="flex justify-center"
                >
-                 <Skull className="w-20 h-20 text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]" />
+                 <EyeNoneIcon className="w-20 h-20 text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]" />
                </motion.div>
 
                <div className="space-y-2">
@@ -115,7 +124,7 @@ export function LevelUpDialog() {
                  onClick={handleClose}
                  className="w-full h-14 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-lg shadow-2xl shadow-red-600/20 group"
                >
-                 ПРИНЯТЬ СУДЬБУ <Terminal className="ml-2 w-5 h-5 group-hover:animate-pulse" />
+                 ПРИНЯТЬ СУДЬБУ <CodeIcon className="ml-2 w-5 h-5 group-hover:animate-pulse" />
                </Button>
             </div>
           ) : (
@@ -163,7 +172,7 @@ export function LevelUpDialog() {
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
               className="absolute inset-0 rounded-full border-2 border-dashed border-white/20"
             />
-            <Sparkles className="w-9 h-9 text-white drop-shadow-lg" />
+            <MagicWandIcon className="w-9 h-9 text-white drop-shadow-lg" />
           </motion.div>
 
           <motion.div
@@ -195,7 +204,7 @@ export function LevelUpDialog() {
                       transition={{ type: "spring", delay: 0.6 }}
                     >
                       <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
-                        <CreditCard className="w-3.5 h-3.5" />
+                        <CardStackIcon className="w-3.5 h-3.5" />
                         {tier}
                       </Badge>
                     </motion.div>
@@ -216,7 +225,7 @@ export function LevelUpDialog() {
                       transition={{ type: "spring", delay: 0.7 }}
                     >
                       <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
-                        <LayoutDashboard className="w-3.5 h-3.5" />
+                        <DashboardIcon className="w-3.5 h-3.5" />
                         {page}
                       </Badge>
                     </motion.div>
@@ -233,7 +242,7 @@ export function LevelUpDialog() {
             className="mt-6"
           >
             <Button variant="gradient" className="w-full gap-2" onClick={handleClose}>
-              Продолжить <Star className="w-4 h-4" />
+              Продолжить <StarFilledIcon className="w-4 h-4" />
             </Button>
           </motion.div>
           </>

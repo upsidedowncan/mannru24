@@ -4,7 +4,7 @@ import { useProgression } from "@/lib/progression";
 import { pageUnlockLevel } from "@/lib/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Lock, Sparkles } from "lucide-react";
+import { LockClosedIcon, MagicWandIcon } from "@radix-ui/react-icons";
 
 const pageTitles: Record<string, string> = {
   "/dashboard/history": "История",
@@ -38,7 +38,7 @@ export function withAccess(WrappedComponent: React.ComponentType, page: string) 
         <Card className="w-full max-w-sm">
           <CardContent className="pt-8 flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-              <Lock className="w-7 h-7 text-muted-foreground" />
+              <LockClosedIcon className="w-7 h-7 text-muted-foreground" />
             </div>
             <h2 className={`text-xl font-semibold mb-2 ${isAlmostThere ? "text-red-500 animate-pulse" : ""}`}>
               {isAlmostThere ? "ВХОД ВОСПРЕЩЕН" : (pageTitles[page] || "Раздел")}
@@ -59,7 +59,7 @@ export function withAccess(WrappedComponent: React.ComponentType, page: string) 
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
-              <Sparkles className="w-3.5 h-3.5" />
+              <MagicWandIcon className="w-3.5 h-3.5" />
               Тратьте МР, чтобы получать XP
             </div>
           </CardContent>

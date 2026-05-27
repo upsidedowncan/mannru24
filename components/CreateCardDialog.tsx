@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, CreditCard, ArrowUpRight, Lock } from "lucide-react";
+import { PlusIcon, IdCardIcon, ArrowTopRightIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import type { CardTier } from "@/lib/db";
 import { tierUnlockLevel } from "@/lib/constants";
 import { tierMeta } from "@/components/BankCard";
@@ -31,6 +31,7 @@ const upgradeCosts: Record<CardTier, number> = {
   diamond: 12000,
   black: 20000,
   obsidian: 50000,
+  rewards: 0,
 };
 
 export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogProps) {
@@ -111,7 +112,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
     <Dialog open={open} onOpenChange={(o) => { if (o) { setOpen(true); setStep("tier"); } else setOpen(false); }}>
       <DialogTrigger asChild>
         <Button variant="gradient" size="sm" className="gap-1.5">
-          <Plus className="w-4 h-4" />
+          <PlusIcon className="w-4 h-4" />
           Новая карта
         </Button>
       </DialogTrigger>
@@ -141,7 +142,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
                           <div className={`w-4 h-4 rounded-sm ${meta.gradient} ring-1 ring-white/10`} />
                           <span>{meta.label}</span>
                           <span className="text-muted-foreground text-xs ml-auto">{meta.cashback}</span>
-                          {locked && <Lock className="w-3 h-3 ml-1 text-muted-foreground/50" />}
+                          {locked && <LockClosedIcon className="w-3 h-3 ml-1 text-muted-foreground/50" />}
                         </div>
                       </SelectItem>
                     );
@@ -181,7 +182,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
             )}
 
             <Button variant="gradient" className="w-full gap-2" onClick={handleNext} disabled={needsFunding && availableSources.length === 0}>
-              Далее <ArrowUpRight className="w-4 h-4" />
+              Далее <ArrowTopRightIcon className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -236,7 +237,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
 
             <DialogFooter className="flex gap-2 sm:gap-2">
               <Button type="submit" variant="gradient" className="gap-2" disabled={loading}>
-                <CreditCard className="w-4 h-4" />
+                <IdCardIcon className="w-4 h-4" />
                 {loading ? "Создание..." : "Создать"}
               </Button>
             </DialogFooter>

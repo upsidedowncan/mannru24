@@ -5,7 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Terminal, Plus, Zap, Star, X, Globe, Trash2, Key, Users, Eye, Ban, ShieldCheck } from "lucide-react";
+import {
+  CodeIcon,
+  PlusIcon,
+  LightningBoltIcon,
+  StarFilledIcon,
+  Cross2Icon,
+  GlobeIcon,
+  TrashIcon,
+  LockClosedIcon,
+  PersonIcon,
+  EyeOpenIcon,
+  CircleBackslashIcon,
+  CheckCircledIcon,
+} from "@radix-ui/react-icons";
 import { toast } from "sonner";
 import { useProgression } from "@/lib/progression";
 
@@ -180,18 +193,18 @@ export function DevPanel() {
         onClick={() => setShow(!show)}
         className="fixed bottom-20 right-4 z-[60] w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center shadow-xl border-2 border-white/20 hover:scale-110 transition-all"
       >
-        <Terminal className="w-5 h-5" />
+        <CodeIcon className="w-5 h-5" />
       </button>
 
       {show && (
         <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="w-full max-w-lg bg-zinc-950 border-zinc-800 shadow-2xl relative max-h-[90vh] flex flex-col">
             <button onClick={() => setShow(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10">
-              <X className="w-5 h-5" />
+              <Cross2Icon className="w-5 h-5" />
             </button>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-red-500">
-                <Terminal className="w-5 h-5" /> DEV CONSOLE
+                <CodeIcon className="w-5 h-5" /> DEV CONSOLE
               </CardTitle>
               <div className="flex gap-1 mt-2 flex-wrap">
                 <button
@@ -204,13 +217,13 @@ export function DevPanel() {
                   onClick={() => setActiveTab("oauth")}
                   className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors flex items-center gap-1 ${activeTab === "oauth" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
                 >
-                  <Key className="w-3 h-3" /> OAuth Apps
+                  <LockClosedIcon className="w-3 h-3" /> OAuth Apps
                 </button>
                 <button
                   onClick={() => setActiveTab("users")}
                   className={`px-3 py-1 text-[10px] uppercase font-bold rounded transition-colors flex items-center gap-1 ${activeTab === "users" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-400 hover:text-white"}`}
                 >
-                  <Users className="w-3 h-3" /> Users
+                  <PersonIcon className="w-3 h-3" /> Users
                 </button>
               </div>
             </CardHeader>
@@ -223,14 +236,14 @@ export function DevPanel() {
                       <Label className="text-[10px] uppercase text-zinc-500">Add XP</Label>
                       <div className="flex gap-2">
                         <Input value={xpAdd} onChange={e => setXpAdd(e.target.value)} className="bg-zinc-900 border-zinc-800 h-8 text-xs" />
-                        <Button onClick={() => handleAction("xp", xpAdd)} size="sm" variant="outline" className="h-8 w-8 p-0"><Zap className="w-3 h-3" /></Button>
+                        <Button onClick={() => handleAction("xp", xpAdd)} size="sm" variant="outline" className="h-8 w-8 p-0"><LightningBoltIcon className="w-3 h-3" /></Button>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase text-zinc-500">Set Level</Label>
                       <div className="flex gap-2">
                         <Input value={lvlTarget} onChange={e => setLvlTarget(e.target.value)} className="bg-zinc-900 border-zinc-800 h-8 text-xs" />
-                        <Button onClick={() => handleAction("level", lvlTarget)} size="sm" variant="outline" className="h-8 w-8 p-0"><Star className="w-3 h-3" /></Button>
+                        <Button onClick={() => handleAction("level", lvlTarget)} size="sm" variant="outline" className="h-8 w-8 p-0"><StarFilledIcon className="w-3 h-3" /></Button>
                       </div>
                     </div>
                   </div>
@@ -287,7 +300,7 @@ export function DevPanel() {
                           className="bg-zinc-900 border-zinc-800 h-8 text-xs"
                         />
                         <Button onClick={handleAddScope} size="sm" variant="outline" className="h-8 w-8 p-0 shrink-0">
-                          <Plus className="w-3 h-3" />
+                          <PlusIcon className="w-3 h-3" />
                         </Button>
                       </div>
                       {scopes.length > 0 && (
@@ -296,7 +309,7 @@ export function DevPanel() {
                             <span key={scope} className="flex items-center gap-1 bg-zinc-800 text-zinc-300 text-[10px] px-2 py-0.5 rounded-full font-mono">
                               {scope}
                               <button onClick={() => handleRemoveScope(scope)} className="text-zinc-500 hover:text-red-400 transition-colors">
-                                <X className="w-2.5 h-2.5" />
+                                <Cross2Icon className="w-2.5 h-2.5" />
                               </button>
                             </span>
                           ))}
@@ -305,7 +318,7 @@ export function DevPanel() {
                     </div>
 
                     <Button onClick={handleCreateOAuthApp} size="sm" className="w-full h-8 text-xs bg-red-600 hover:bg-red-700 text-white">
-                      <Plus className="w-3 h-3 mr-1" /> Create App
+                      <PlusIcon className="w-3 h-3 mr-1" /> Create App
                     </Button>
                   </div>
 
@@ -318,7 +331,7 @@ export function DevPanel() {
                             <img src={app.iconUrl} alt="" className="w-6 h-6 rounded object-cover shrink-0 mt-0.5" />
                           ) : (
                             <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center shrink-0 mt-0.5">
-                              <Globe className="w-3 h-3 text-zinc-500" />
+                              <GlobeIcon className="w-3 h-3 text-zinc-500" />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
@@ -337,7 +350,7 @@ export function DevPanel() {
                             onClick={() => handleDeleteOAuthApp(app.id)}
                             className="text-zinc-600 hover:text-red-500 transition-colors shrink-0 mt-0.5"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <TrashIcon className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))}
@@ -381,7 +394,7 @@ export function DevPanel() {
                             onClick={() => handlePreview(user)}
                             className="flex items-center gap-1 text-[9px] font-mono font-bold text-blue-400 hover:text-blue-300 bg-blue-950/30 hover:bg-blue-950/50 border border-blue-800/40 px-2 py-1 rounded transition-colors"
                           >
-                            <Eye className="w-2.5 h-2.5" /> Preview
+                            <EyeOpenIcon className="w-2.5 h-2.5" /> Preview
                           </button>
                         )}
                         {user.id !== DEV_UUID && (
@@ -392,7 +405,7 @@ export function DevPanel() {
                               : "text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-950/50 border-red-800/40"
                             }`}
                           >
-                            {user.isBanned ? <><ShieldCheck className="w-2.5 h-2.5" /> Разбан</> : <><Ban className="w-2.5 h-2.5" /> Бан</>}
+                            {user.isBanned ? <><CheckCircledIcon className="w-2.5 h-2.5" /> Разбан</> : <><CircleBackslashIcon className="w-2.5 h-2.5" /> Бан</>}
                           </button>
                         )}
                       </div>

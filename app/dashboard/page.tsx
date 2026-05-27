@@ -8,7 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ArrowUpRight, ArrowDownLeft, Percent, TrendingUp, Wallet, Send, QrCode, Plus, ChevronRight, CreditCard, Lock, AlertCircle, Gift } from "lucide-react";
+import {
+  ArrowTopRightIcon,
+  ArrowBottomLeftIcon,
+  PieChartIcon,
+  IdCardIcon,
+  PaperPlaneIcon,
+  ReaderIcon,
+  PlusIcon,
+  ChevronRightIcon,
+  CardStackIcon,
+  LockClosedIcon,
+  ExclamationTriangleIcon,
+  ArchiveIcon,
+} from "@radix-ui/react-icons";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -87,17 +100,17 @@ export default function DashboardPage() {
   const totalExpense = Math.abs(transactions.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0));
 
   const stats = [
-    { label: "Баланс", value: `${totalBalance.toLocaleString("ru")} МР`, sub: `${cards.length} карт`, icon: Wallet },
-    { label: "Доходы", value: `+${totalIncome.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: ArrowDownLeft },
-    { label: "Расходы", value: `${totalExpense.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: ArrowUpRight },
-    { label: "Бонусы", value: user ? `${user.bonusBalance.toLocaleString("ru")}` : "0", sub: user ? `Уровень ${user.level}` : "", icon: Percent },
+    { label: "Баланс", value: `${totalBalance.toLocaleString("ru")} МР`, sub: `${cards.length} карт`, icon: IdCardIcon },
+    { label: "Доходы", value: `+${totalIncome.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: ArrowBottomLeftIcon },
+    { label: "Расходы", value: `${totalExpense.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: ArrowTopRightIcon },
+    { label: "Бонусы", value: user ? `${user.bonusBalance.toLocaleString("ru")}` : "0", sub: user ? `Уровень ${user.level}` : "", icon: PieChartIcon },
   ];
 
   const quickActions = [
-    { label: "Перевод", icon: Send, level: 5, href: "/dashboard/transfers" },
-    { label: "Оплата", icon: QrCode, level: 1, href: "/dashboard" },
-    { label: "Пополнить", icon: Plus, level: 1, href: "/dashboard" },
-    { label: "Инвестиции", icon: TrendingUp, level: 15, href: "/dashboard/investments" },
+    { label: "Перевод", icon: PaperPlaneIcon, level: 5, href: "/dashboard/transfers" },
+    { label: "Оплата", icon: ReaderIcon, level: 1, href: "/dashboard" },
+    { label: "Пополнить", icon: PlusIcon, level: 1, href: "/dashboard" },
+    { label: "Инвестиции", icon: ArrowTopRightIcon, level: 15, href: "/dashboard/investments" },
   ];
 
   if (loading) {
@@ -132,7 +145,7 @@ export default function DashboardPage() {
         ) : (
           <Card>
             <CardContent className="pt-6 flex flex-col items-center text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4"><CreditCard className="w-8 h-8 text-muted-foreground" /></div>
+              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4"><CardStackIcon className="w-8 h-8 text-muted-foreground" /></div>
               <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
               <p className="text-muted-foreground text-sm mb-4">Создайте свою первую карту и получите 1 000 МР</p>
               {!isReadOnly && <CreateCardDialog onCreated={fetchData} existingCards={[]} />}
@@ -140,7 +153,7 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card
             className="cursor-pointer hover:border-blue-500/50 transition-colors group relative overflow-hidden"
             onClick={claimDaily}
@@ -148,7 +161,7 @@ export default function DashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-blue-400">Ежедневная награда</CardTitle>
-              <Gift className={`w-4 h-4 text-blue-500 ${dailyClaiming ? "animate-bounce" : ""}`} />
+              <ArchiveIcon className={`w-4 h-4 text-blue-500 ${dailyClaiming ? "animate-bounce" : ""}`} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">Получить</div>
@@ -179,7 +192,7 @@ export default function DashboardPage() {
                 </div>
                 {isLocked && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800">
-                    <Lock className="w-2 h-2 text-zinc-500" />
+                    <LockClosedIcon className="w-2 h-2 text-zinc-500" />
                   </div>
                 )}
               </div>
@@ -192,7 +205,7 @@ export default function DashboardPage() {
                     <button
                       onClick={() => toast.error(`Куда лезешь?`, {
                         description: `Эта функция доступна только для элиты ${action.level} уровня. Качайся.`,
-                        icon: <AlertCircle className="w-4 h-4 text-red-500" />
+                        icon: <ExclamationTriangleIcon className="w-4 h-4 text-red-500" />
                       })}
                       className="flex flex-col items-center gap-2 p-4 rounded-lg border transition-all bg-zinc-950/50 border-zinc-900 opacity-50 cursor-pointer"
                     >
@@ -221,7 +234,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div><CardTitle>Последние операции</CardTitle><CardDescription>Ваши последние транзакции</CardDescription></div>
-              <Button variant="ghost" size="sm" className="gap-1">Все <ChevronRight className="w-3.5 h-3.5" /></Button>
+              <Button variant="ghost" size="sm" className="gap-1">Все <ChevronRightIcon className="w-3.5 h-3.5" /></Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

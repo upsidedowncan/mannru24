@@ -1,19 +1,28 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CreditCard, Gift, CheckSquare, History, Lock, Moon } from "lucide-react";
+import {
+  DashboardIcon,
+  CardStackIcon,
+  ArchiveIcon,
+  CheckIcon,
+  CounterClockwiseClockIcon,
+  LockClosedIcon,
+  MoonIcon,
+} from "@radix-ui/react-icons";
 import { useProgression } from "@/lib/progression";
 
 import { pageUnlockLevel } from "@/lib/constants";
 import { isEventActive } from "@/lib/events";
 
 const navItems = [
-  { href: "/dashboard", label: "Главная", icon: LayoutDashboard },
-  { href: "/dashboard/cards", label: "Карты", icon: CreditCard },
-  { href: "/dashboard/tasks", label: "Задания", icon: CheckSquare },
-  { href: "/dashboard/history", label: "История", icon: History },
-  { href: "/dashboard/bonuses", label: "Бонусы", icon: Gift },
+  { href: "/dashboard", label: "Главная", icon: DashboardIcon },
+  { href: "/dashboard/cards", label: "Карты", icon: CardStackIcon },
+  { href: "/dashboard/tasks", label: "Задания", icon: CheckIcon },
+  { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
+  { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
 ];
 
 export function MobileNavbar() {
@@ -22,8 +31,8 @@ export function MobileNavbar() {
   const kurbanActive = isEventActive("kurban");
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-950/90 border-t border-zinc-900 z-50">
-      <div className="flex items-center justify-around h-16 pb-1">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900 z-50 px-2">
+      <div className="flex items-center justify-around h-16 pb-2">
         {kurbanActive && (
           <Link
             href="/dashboard/event"
@@ -31,7 +40,7 @@ export function MobileNavbar() {
               pathname === "/dashboard/event" ? "text-emerald-500" : "text-emerald-500/60"
             }`}
           >
-            <Moon className="w-5 h-5 fill-emerald-500/20" />
+            <MoonIcon className="w-5 h-5 fill-emerald-500/20" />
             <span className="text-[10px] font-medium text-center">Курбан</span>
           </Link>
         )}
@@ -49,7 +58,7 @@ export function MobileNavbar() {
             >
               <item.icon className="w-5 h-5" />
               <span className="text-[10px] font-medium">{item.label}</span>
-              {isLocked && <Lock className="w-2.5 h-2.5 absolute top-1 right-1" />}
+              {isLocked && <LockClosedIcon className="w-2.5 h-2.5 absolute top-1 right-1" />}
             </Link>
           );
         })}

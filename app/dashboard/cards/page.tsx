@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Check, CreditCard, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckIcon, IdCardIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 import type { Card as CardType, CardTier } from "@/lib/db";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -43,12 +43,12 @@ function TariffCarousel({ onSelect, existingCards, isReadOnly }: { onSelect: () 
     <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden perspective-[1200px]">
       <div className="absolute top-1/2 left-4 z-20 -translate-y-1/2">
         <Button variant="outline" size="icon" className="rounded-full bg-zinc-900/50 border-zinc-800" onClick={prev}>
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeftIcon className="w-6 h-6" />
         </Button>
       </div>
       <div className="absolute top-1/2 right-4 z-20 -translate-y-1/2">
         <Button variant="outline" size="icon" className="rounded-full bg-zinc-900/50 border-zinc-800" onClick={next}>
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRightIcon className="w-6 h-6" />
         </Button>
       </div>
 
@@ -190,7 +190,7 @@ export default function CardsPage() {
                         onClick={() => setDeleteId(card.id)}
                         className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <TrashIcon className="w-4 h-4" />
                       </button>
                     </div>
                   )}
@@ -206,7 +206,7 @@ export default function CardsPage() {
             <Card className="bg-zinc-950 border-zinc-900">
               <CardContent className="pt-6 flex flex-col items-center text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
-                  <CreditCard className="w-8 h-8 text-zinc-500" />
+                  <IdCardIcon className="w-8 h-8 text-zinc-500" />
                 </div>
                 <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
                 <p className="text-zinc-500 text-sm mb-4">Выберите подходящий тариф и начните тратить воображаемые деньги.</p>
@@ -226,7 +226,7 @@ export default function CardsPage() {
                   <ul className="space-y-1">
                     {t.features.map((f, i) => (
                       <li key={i} className="text-xs text-zinc-500 flex items-center gap-2">
-                        <Check className="w-3 h-3 text-blue-500" /> {f}
+                        <CheckIcon className="w-3 h-3 text-blue-500" /> {f}
                       </li>
                     ))}
                   </ul>

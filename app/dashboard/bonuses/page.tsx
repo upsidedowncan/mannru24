@@ -5,7 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift, Flame, Star, Sparkles, Trophy, Clock, ArrowRight, CheckCircle2, Percent, Ticket, Zap, CreditCard, RefreshCw } from "lucide-react";
+import {
+  ArchiveIcon,
+  LightningBoltIcon,
+  StarFilledIcon,
+  MagicWandIcon,
+  ClockIcon,
+  ArrowRightIcon,
+  CheckCircledIcon,
+  PieChartIcon,
+  SymbolIcon,
+  UpdateIcon,
+} from "@radix-ui/react-icons";
 import { withAccess } from "@/components/AccessGuard";
 import { tierMeta } from "@/components/BankCard";
 import type { Bonus, UserProfile, Card as CardType } from "@/lib/db";
@@ -14,11 +25,11 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
-const iconMap: Record<string, typeof Gift> = {
-  "Кэшбэк": Percent,
-  "Акции": Ticket,
-  "Подарки": Gift,
-  "Специальные": Sparkles,
+const iconMap: Record<string, any> = {
+  "Кэшбэк": PieChartIcon,
+  "Акции": SymbolIcon,
+  "Подарки": ArchiveIcon,
+  "Специальные": MagicWandIcon,
 };
 
 function BonusesPage() {
@@ -133,7 +144,7 @@ function BonusesPage() {
                 variant="gradient"
                 className="h-10 px-6"
               >
-                {redeeming ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Обменять всё"}
+                {redeeming ? <UpdateIcon className="w-4 h-4 animate-spin" /> : "Обменять всё"}
               </Button>
             </div>
             {user && user.bonusBalance < 100 && (
@@ -142,7 +153,7 @@ function BonusesPage() {
           </CardContent>
         </Card>
         <Card className="bg-zinc-950 border-zinc-900"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Активировано</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-emerald-500">{activatedCount}</div></CardContent></Card>
-        <Card className="bg-zinc-950 border-zinc-900"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Серия дней</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-emerald-500">{user?.streak || 0} 🔥</div></CardContent></Card>
+        <Card className="bg-zinc-950 border-zinc-900"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Серия дней</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-emerald-500">{user?.streak || 0} <LightningBoltIcon className="inline w-5 h-5 text-amber-500" /></div></CardContent></Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -158,13 +169,13 @@ function BonusesPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {(tab === "all" ? bonuses : bonuses.filter((b) => b.category === tab)).map((bonus) => {
-                  const Icon = iconMap[bonus.category] || Gift;
+                  const Icon = iconMap[bonus.category] || ArchiveIcon;
                   return (
                     <Card key={bonus.id} className="flex flex-col">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center"><Icon className="w-5 h-5" /></div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="w-3 h-3" />{bonus.expires}</div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground"><ClockIcon className="w-3 h-3" />{bonus.expires}</div>
                         </div>
                         <div className="mt-3">
                           <Badge variant="secondary" className="mb-2">{bonus.category}</Badge>
@@ -173,11 +184,11 @@ function BonusesPage() {
                         </div>
                       </CardHeader>
                       <CardFooter className="mt-auto flex items-center justify-between pt-4 border-t">
-                        <div className="flex items-center gap-1 text-sm font-medium"><Star className="w-3.5 h-3.5 text-amber-500" />{bonus.points} баллов</div>
+                        <div className="flex items-center gap-1 text-sm font-medium"><StarFilledIcon className="w-3.5 h-3.5 text-amber-500" />{bonus.points} баллов</div>
                         {bonus.activated ? (
-                          <Badge variant="success" className="gap-1"><CheckCircle2 className="w-3 h-3" /> Активирован</Badge>
+                          <Badge variant="success" className="gap-1"><CheckCircledIcon className="w-3 h-3" /> Активирован</Badge>
                         ) : (
-                          <Button size="sm" variant="gradient" className="gap-1.5" onClick={() => activateBonus(bonus.id)}>Активировать <ArrowRight className="w-3 h-3" /></Button>
+                          <Button size="sm" variant="gradient" className="gap-1.5" onClick={() => activateBonus(bonus.id)}>Активировать <ArrowRightIcon className="w-3 h-3" /></Button>
                         )}
                       </CardFooter>
                     </Card>
