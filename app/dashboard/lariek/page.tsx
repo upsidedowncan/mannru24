@@ -4,19 +4,18 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { UpdateIcon, ChevronLeftIcon, HeartIcon, CrumpledPaperIcon, ArchiveIcon } from "@radix-ui/react-icons";
-import Link from "next/link";
+import { UpdateIcon, HeartIcon, CrumpledPaperIcon, ArchiveIcon } from "@radix-ui/react-icons";
+import { CardSelect } from "@/components/CardSelect";
 
 export default function LariekPage() {
-  const [cards, setCards] = useState<any[]>([]);
   const [selectedCardId, setSelectedCardId] = useState("");
   const [amount, setAmount] = useState(100);
   const [poolBalance, setPoolBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
 
   const fetchStats = async () => {
     try {
@@ -31,8 +30,7 @@ export default function LariekPage() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setCards(data);
-          if (data.length > 0) setSelectedCardId(data[0].id);
+          if (data.length > 0 && !selectedCardId) setSelectedCardId(data[0].id);
         }
         setLoading(false);
       });
@@ -52,7 +50,7 @@ export default function LariekPage() {
       if (res.ok) {
         toast.success("Спасибо за ваше пожертвование");
         setPoolBalance(data.poolBalance);
-        setCards(prev => prev.map(c => c.id === selectedCardId ? { ...c, balance: data.newBalance } : c));
+        setBalance(data.newBalance);
       } else {
         toast.error(data.error);
       }
@@ -75,7 +73,7 @@ export default function LariekPage() {
       if (res.ok) {
         toast.success("Средства зачислены на вашу карту");
         setPoolBalance(data.poolBalance);
-        setCards(prev => prev.map((c, i) => i === 0 ? { ...c, balance: data.newBalance } : c));
+        setBalance(data.newBalance);
       } else {
         toast.error(data.error);
       }
@@ -86,85 +84,83 @@ export default function LariekPage() {
     }
   };
 
-  if (loading) return <div className="space-y-6"><div className="h-8 w-32 bg-secondary rounded animate-pulse" /><div className="h-40 bg-secondary rounded-xl animate-pulse" /></div>;
+  if (loading) return <div className="space-y-6 px-4 md:px-0"><div className="h-8 w-32 bg-secondary rounded animate-pulse" /><div className="h-40 bg-secondary rounded-xl animate-pulse" /></div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 md:px-0">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Ларёк</h1>
         <p className="text-muted-foreground text-sm mt-1">Социальная помощь участникам Системы</p>
       </div>
 
-      <Card className="bg-emerald-500/5 border-emerald-500/20">
-        <CardContent className="pt-6">
+      <Card className="bg-emerald-500/5 border-emerald-500/10 overflow-hidden relative shadow-2xl">
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+        <CardContent className="pt-8 pb-8">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <p className="text-xs font-medium text-emerald-500 uppercase tracking-wider">Доступно в пуле</p>
-              <p className="text-3xl font-bold">{poolBalance.toLocaleString()} МР</p>
+              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em]">Доступно в пуле</p>
+              <p className="text-4xl font-black italic tracking-tighter">{poolBalance.toLocaleString("ru")} МР</p>
             </div>
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <ArchiveIcon className="w-6 h-6 text-emerald-500" />
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+              <ArchiveIcon className="w-8 h-8 text-emerald-500" />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-zinc-950 border-zinc-900 shadow-xl">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <HeartIcon className="w-5 h-5 text-red-500" /> Стать спонсором
+            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+              <HeartIcon className="w-4 h-4 text-red-500" /> Стать спонсором
             </CardTitle>
-            <CardDescription className="text-xs text-balance">Помогите нуждающимся участникам Системы</CardDescription>
+            <CardDescription className="text-xs text-zinc-500">Помогите нуждающимся участникам Системы</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase text-muted-foreground">Карта</label>
-              <Select value={selectedCardId} onValueChange={setSelectedCardId}>
-                <SelectTrigger className="bg-secondary/50">
-                  <SelectValue placeholder="Выберите карту" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cards.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.tier} • {c.balance} МР</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase text-zinc-600 ml-1">Карта</label>
+              <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} className="bg-zinc-900/50 border-zinc-800" />
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-semibold uppercase text-muted-foreground">Сумма</label>
-              <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="bg-secondary/50" />
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase text-zinc-600 ml-1">Сумма</label>
+              <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="bg-zinc-900/50 border-zinc-800" />
             </div>
-            <Button onClick={handleDeposit} disabled={actionLoading} className="w-full" variant="gradient">
-              {actionLoading ? <UpdateIcon className="animate-spin" /> : "Пожертвовать"}
+            <Button onClick={handleDeposit} disabled={actionLoading} className="w-full h-11 text-xs font-bold" variant="gradient">
+              {actionLoading ? <UpdateIcon className="animate-spin" /> : "ПОЖЕРТВОВАТЬ"}
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-zinc-950 border-zinc-900 shadow-xl">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CrumpledPaperIcon className="w-5 h-5 text-zinc-500" /> Забрать пособие
+            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+              <CrumpledPaperIcon className="w-4 h-4 text-zinc-400" /> Забрать пособие
             </CardTitle>
-            <CardDescription className="text-xs">Для участников с балансом ниже 200 МР</CardDescription>
+            <CardDescription className="text-xs text-zinc-500">Для участников с балансом ниже 1 000 МР</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-secondary rounded-lg text-center">
-              <p className="text-[10px] text-muted-foreground uppercase mb-1">Разовая выплата</p>
-              <p className="text-2xl font-bold">50 МР</p>
+            <div className="p-6 bg-zinc-900/50 border border-zinc-900 border-dashed rounded-xl text-center">
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Разовая выплата</p>
+              <p className="text-3xl font-black italic tracking-tighter">100 МР</p>
             </div>
-            <div className="h-[76px]" /> {/* Spacer to align with left card */}
+            <div className="h-[2px]" />
             <Button
               onClick={handleWithdraw}
-              disabled={actionLoading || poolBalance < 50}
+              disabled={actionLoading || poolBalance < 100}
               variant="outline"
-              className="w-full"
+              className="w-full h-11 text-xs font-bold border-zinc-800 hover:bg-zinc-900"
             >
-              {actionLoading ? <UpdateIcon className="animate-spin" /> : "Запросить помощь"}
+              {actionLoading ? <UpdateIcon className="animate-spin" /> : "ЗАПРОСИТЬ ПОМОЩЬ"}
             </Button>
           </CardContent>
         </Card>
       </div>
+
+      {balance !== null && (
+        <div className="text-center">
+          <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Текущий баланс: <span className="text-zinc-400">{balance.toLocaleString("ru")} МР</span></p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RocketIcon, TargetIcon, DiscIcon, GridIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { motion } from "framer-motion";
 
 const games = [
   {
@@ -39,7 +38,7 @@ const games = [
 
 export default function GamesPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 md:px-0">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Игры</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -56,24 +55,24 @@ export default function GamesPage() {
             transition={{ delay: i * 0.05 }}
           >
             <Link href={game.href}>
-              <Card className="hover:bg-accent/50 transition-colors h-full">
+              <Card className="hover:bg-zinc-900/50 transition-colors h-full border-zinc-800 bg-zinc-950">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className={`p-2 rounded-lg ${game.color}`}>
                       <game.icon className="w-5 h-5" />
                     </div>
-                    <Badge variant="secondary" className="text-[10px]">
+                    <Badge variant="secondary" className="text-[10px] bg-zinc-900 text-zinc-400 border-zinc-800">
                       {game.tag}
                     </Badge>
                   </div>
                   <CardTitle className="text-lg mt-3">{game.title}</CardTitle>
-                  <CardDescription className="text-xs line-clamp-2">
+                  <CardDescription className="text-xs line-clamp-2 text-zinc-500">
                     {game.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center">
-                    Играть <RocketIcon className="ml-1.5 w-3 h-3" />
+                  <div className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 flex items-center group">
+                    Играть <RocketIcon className="ml-1.5 w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                 </CardContent>
               </Card>
