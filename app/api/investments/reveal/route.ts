@@ -10,8 +10,8 @@ export async function POST() {
   const user = db.users.find(u => u.id === session.user.id);
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-  if (user.level < 15) {
-    return NextResponse.json({ error: "Insufficient level for the Great Conspiracy" }, { status: 403 });
+  if (user.level < 5) {
+    return NextResponse.json({ error: "Access Denied. Level 5 required." }, { status: 403 });
   }
 
   const apiKey = process.env.OPENROUTER_API_KEY;

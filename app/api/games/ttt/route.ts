@@ -72,7 +72,14 @@ export async function POST(req: Request) {
       state.isGameOver = true;
     } else {
       // Improved Bot move (O) using Minimax or at least strategic priority
-      const botIdx = getBestMove(state.board, "O");
+      // But we add a 40% chance of making a random (bad) move to make it easier
+      let botIdx;
+      if (Math.random() < 0.4) {
+        const availSpots = state.board.map((v, i) => v === null ? i : null).filter(v => v !== null) as number[];
+        botIdx = availSpots[Math.floor(Math.random() * availSpots.length)];
+      } else {
+        botIdx = getBestMove(state.board, "O");
+      }
       state.board[botIdx] = "O";
 
       winner = checkWinner(state.board);

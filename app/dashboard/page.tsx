@@ -27,6 +27,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Card as CardType, Transaction, UserProfile } from "@/lib/db";
 import { useProgression } from "@/lib/progression";
+import { SocialCreditMeter } from "@/components/SocialCreditMeter";
+import { SystemLogs } from "@/components/SystemLogs";
 
 export default function DashboardPage() {
   const [cards, setCards] = useState<CardType[]>([]);
@@ -110,7 +112,7 @@ export default function DashboardPage() {
     { label: "Перевод", icon: PaperPlaneIcon, level: 5, href: "/dashboard/transfers" },
     { label: "Оплата", icon: ReaderIcon, level: 1, href: "/dashboard" },
     { label: "Пополнить", icon: PlusIcon, level: 1, href: "/dashboard" },
-    { label: "Инвестиции", icon: ArrowTopRightIcon, level: 15, href: "/dashboard/investments" },
+    { label: "Инвестиции", icon: ArrowTopRightIcon, level: 5, href: "/dashboard/investments" },
   ];
 
   if (loading) {
@@ -168,6 +170,7 @@ export default function DashboardPage() {
               <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-tighter">Нажми, если не гордый</p>
             </CardContent>
           </Card>
+          <SocialCreditMeter level={user?.level || 1} balance={totalBalance} />
           {stats.slice(0, 3).map((stat) => (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -230,8 +233,10 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {transactions.length > 0 && (
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            {transactions.length > 0 && (
+              <Card className="h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <div><CardTitle>Последние операции</CardTitle><CardDescription>Ваши последние транзакции</CardDescription></div>
               <Button variant="ghost" size="sm" className="gap-1">Все <ChevronRightIcon className="w-3.5 h-3.5" /></Button>
@@ -254,9 +259,14 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          <div className="lg:col-span-1">
+            <SystemLogs />
+          </div>
+        </div>
       </div>
     </TooltipProvider>
   );

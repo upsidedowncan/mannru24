@@ -22,7 +22,7 @@ export const pageUnlockLevel: Record<string, number> = {
   "/dashboard/transfers": 5,
   "/dashboard/bonuses": 10,
   "/dashboard/tasks": 2,
-  "/dashboard/investments": 15,
+  "/dashboard/investments": 5,
   "/dashboard/games": 1,
   "/dashboard/lariek": 1,
 };

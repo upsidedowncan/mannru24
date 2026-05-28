@@ -58,6 +58,11 @@ export async function POST(req: NextRequest) {
   if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
+  const userCards = db.cards.filter(c => c.userId === currentUser.id);
+  if (userCards.length >= 25) {
+    return NextResponse.json({ error: "Maximum card limit (25) reached" }, { status: 400, headers: corsHeaders });
+  }
+
   const body = await req.json();
   const tier = body.tier as CardTier;
   const existingCodes = db.cards.map((c) => c.emojiCode).filter(Boolean) as string[];

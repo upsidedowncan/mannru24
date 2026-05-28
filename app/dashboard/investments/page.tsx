@@ -246,7 +246,7 @@ export default function InvestmentsPage() {
   };
 
   // ── Lock screen ────────────────────────────────────────────────────────────
-  if (level < 15) {
+  if (level < 5) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-5">
         <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
@@ -255,12 +255,12 @@ export default function InvestmentsPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Инвестиционный Портал</h1>
           <p className="text-muted-foreground text-sm mt-1.5 max-w-xs leading-relaxed">
-            Торговля Маннрублём доступна с&nbsp;15&nbsp;уровня.
+            Торговля Маннрублём доступна с&nbsp;5&nbsp;уровня.
           </p>
         </div>
         <Badge variant="outline" className="font-mono text-[11px]">
           <LockClosedIcon className="w-2.5 h-2.5 mr-1.5" />
-          Уровень 15 · Ваш уровень {level}
+          Уровень 5 · Ваш уровень {level}
         </Badge>
       </div>
     );

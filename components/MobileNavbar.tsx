@@ -34,8 +34,8 @@ export function MobileNavbar() {
   const kurbanActive = isEventActive("kurban");
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900 z-50 px-2">
-      <div className="flex items-center justify-around h-16 pb-2">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900 z-50 px-2 overflow-x-auto">
+      <div className="flex items-center justify-around min-w-max h-16 pb-2 px-4 gap-2">
         {kurbanActive && (
           <Link
             href="/dashboard/event"
