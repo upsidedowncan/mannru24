@@ -85,8 +85,14 @@ export async function POST(req: Request) {
     if (shooter.isBot) {
       actualMove = Math.random() > 0.3 ? "shoot" : "pass";
       if (actualMove === "shoot") {
-        const targets = state.participants.filter(p => !p.isDead);
-        actualTargetId = targets[Math.floor(Math.random() * targets.length)].id;
+        // Bot shouldn't shoot itself
+        const targets = state.participants.filter(p => !p.isDead && p.id !== shooter.id);
+        if (targets.length > 0) {
+          actualTargetId = targets[Math.floor(Math.random() * targets.length)].id;
+        } else {
+          // If no one else alive (shouldn't happen with game logic), just pass
+          actualMove = "pass";
+        }
       }
     }
 

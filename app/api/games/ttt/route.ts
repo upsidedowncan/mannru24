@@ -28,7 +28,6 @@ export async function POST(req: Request) {
     if (!user || !card) return NextResponse.json({ error: "Not found" }, { status: 404 });
     if (card.balance < bet) return NextResponse.json({ error: "Insufficient funds" }, { status: 400 });
 
-    // Deduct bet at start
     card.balance -= bet;
     user.totalSpent += bet;
     logClick(db, user.id, `Начал игру в Крестики-Нолики: -${bet} МР`);
@@ -72,9 +71,8 @@ export async function POST(req: Request) {
       outcome = "draw";
       state.isGameOver = true;
     } else {
-      // Bot move (O)
-      const available = state.board.map((v, i) => v === null ? i : null).filter(v => v !== null) as number[];
-      const botIdx = available[Math.floor(Math.random() * available.length)];
+      // Improved Bot move (O) using Minimax or at least strategic priority
+      const botIdx = getBestMove(state.board, "O");
       state.board[botIdx] = "O";
 
       winner = checkWinner(state.board);
@@ -135,4 +133,56 @@ function checkWinner(squares: (string | null)[]) {
     }
   }
   return null;
+}
+
+function getBestMove(board: (string | null)[], player: string): number {
+  const opponent = player === "X" ? "O" : "X";
+
+  const minimax = (newBoard: (string | null)[], currentPlayer: string): { score: number; index?: number } => {
+    const availSpots = newBoard.map((v, i) => v === null ? i : null).filter(v => v !== null) as number[];
+
+    const winner = checkWinner(newBoard);
+    if (winner === opponent) return { score: -10 };
+    if (winner === player) return { score: 10 };
+    if (availSpots.length === 0) return { score: 0 };
+
+    const moves: { index: number; score: number }[] = [];
+
+    for (let i = 0; i < availSpots.length; i++) {
+      const move: { index: number; score: number } = { index: availSpots[i], score: 0 };
+      newBoard[availSpots[i]] = currentPlayer;
+
+      if (currentPlayer === player) {
+        move.score = minimax(newBoard, opponent).score;
+      } else {
+        move.score = minimax(newBoard, player).score;
+      }
+
+      newBoard[availSpots[i]] = null;
+      moves.push(move);
+    }
+
+    let bestMove: number = 0;
+    if (currentPlayer === player) {
+      let bestScore = -10000;
+      for (let i = 0; i < moves.length; i++) {
+        if (moves[i].score > bestScore) {
+          bestScore = moves[i].score;
+          bestMove = i;
+        }
+      }
+    } else {
+      let bestScore = 10000;
+      for (let i = 0; i < moves.length; i++) {
+        if (moves[i].score < bestScore) {
+          bestScore = moves[i].score;
+          bestMove = i;
+        }
+      }
+    }
+
+    return moves[bestMove];
+  };
+
+  return minimax([...board], player).index!;
 }
