@@ -108,12 +108,14 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
     }
   };
 
+  const isLimitReached = cardCount >= 25;
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (o) { setOpen(true); setStep("tier"); } else setOpen(false); }}>
       <DialogTrigger asChild>
-        <Button variant="gradient" size="sm" className="gap-1.5">
+        <Button variant="gradient" size="sm" className="gap-1.5" disabled={isLimitReached}>
           <PlusIcon className="w-4 h-4" />
-          Новая карта
+          {isLimitReached ? "Лимит карт (25)" : "Новая карта"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">

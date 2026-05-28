@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RocketIcon, TargetIcon, DiscIcon, GridIcon } from "@radix-ui/react-icons";
+import { RocketIcon, TargetIcon, DiscIcon, GridIcon, UpdateIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 
 const games = [
@@ -33,6 +33,15 @@ const games = [
     color: "bg-blue-500/10 text-blue-500",
     href: "/dashboard/games/ttt",
     tag: "Новинка",
+  },
+  {
+    id: "coinflip",
+    title: "Орел и Решка",
+    description: "Классическая игра на удачу 50/50.",
+    icon: UpdateIcon,
+    color: "bg-yellow-500/10 text-yellow-500",
+    href: "/dashboard/games/coinflip",
+    tag: "Легко",
   },
 ];
 

@@ -15,6 +15,7 @@ import { CheckIcon, IdCardIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } f
 import type { Card as CardType, CardTier } from "@/lib/db";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useMediaQuery } from "@/lib/utils";
 import { useProgression } from "@/lib/progression";
 
 const tierOrder: CardTier[] = ["bronze", "silver", "gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
@@ -66,13 +67,17 @@ function TariffCarousel({ onSelect, existingCards, isReadOnly }: { onSelect: () 
           // Only show cards within a certain range
           if (absOffset > 3) return null;
 
+          const isMobile = useMediaQuery("(max-width: 768px)");
+          const xOffset = isMobile ? 160 : 220;
+          const scaleFactor = isMobile ? 0.8 : 1;
+
           return (
             <motion.div
               key={tier.tier}
               initial={false}
               animate={{
-                x: normalizedOffset * 220,
-                scale: 1 - absOffset * 0.15,
+                x: normalizedOffset * xOffset,
+                scale: (1 - absOffset * 0.15) * scaleFactor,
                 rotateY: normalizedOffset * -35,
                 z: -absOffset * 150,
                 opacity: 1 - absOffset * 0.2,
@@ -196,7 +201,7 @@ export default function CardsPage() {
                   )}
                 </div>
               ))}
-              {!isReadOnly && (
+              {!isReadOnly && cards.length < 25 && (
                 <div className="aspect-[1.586/1] border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center group hover:border-zinc-700 transition-colors cursor-pointer">
                   <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
                 </div>
