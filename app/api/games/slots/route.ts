@@ -32,11 +32,12 @@ export async function POST(req: Request) {
 
   // Generate result
   // 3 reels
-  const result = [
-    SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-    SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-    SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
+  const reels = [
+    Math.floor(Math.random() * SYMBOLS.length),
+    Math.floor(Math.random() * SYMBOLS.length),
+    Math.floor(Math.random() * SYMBOLS.length),
   ];
+  const result = reels.map(i => SYMBOLS[i]);
 
   let multiplier = 0;
   let winMessage = "Повезет в другой раз!";
@@ -66,7 +67,9 @@ export async function POST(req: Request) {
   writeDb(db);
 
   return NextResponse.json({
+    reels,
     result,
+    win: winAmount,
     winAmount,
     winMessage,
     newBalance: card.balance
