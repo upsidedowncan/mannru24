@@ -4,7 +4,7 @@ import { useProgression } from "@/lib/progression";
 import { pageUnlockLevel } from "@/lib/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { LockClosedIcon, MagicWandIcon } from "@radix-ui/react-icons";
+import { RiLockPasswordLine, RiMagicLine } from "react-icons/ri";
 
 const pageTitles: Record<string, string> = {
   "/dashboard/history": "История",
@@ -30,23 +30,19 @@ export function withAccess(WrappedComponent: React.ComponentType, page: string) 
     }
 
     const xpNeeded = Math.max(0, getLevelXpThreshold(requiredLevel) - xp);
-    const isInvestments = page === "/dashboard/investments";
-    const isAlmostThere = isInvestments && level === 14;
 
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Card className="w-full max-w-sm">
           <CardContent className="pt-8 flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-              <LockClosedIcon className="w-7 h-7 text-muted-foreground" />
+              <RiLockPasswordLine className="w-7 h-7 text-muted-foreground" />
             </div>
-            <h2 className={`text-xl font-semibold mb-2 ${isAlmostThere ? "text-red-500 animate-pulse" : ""}`}>
-              {isAlmostThere ? "ВХОД ВОСПРЕЩЕН" : (pageTitles[page] || "Раздел")}
+            <h2 className="text-xl font-semibold mb-2">
+              {pageTitles[page] || "Раздел"}
             </h2>
             <p className="text-muted-foreground text-sm mb-6">
-              {isAlmostThere
-                ? "Вы на пороге Истины. Система наблюдает за вашим прогрессом. Путь к 15 уровню станет вашим последним свободным выбором."
-                : (pageDescriptions[page] || "Этот раздел ещё заблокирован")}
+              {pageDescriptions[page] || "Этот раздел ещё заблокирован"}
             </p>
             <div className="w-full space-y-3 mb-6">
               <div className="flex justify-between text-sm">
@@ -59,7 +55,7 @@ export function withAccess(WrappedComponent: React.ComponentType, page: string) 
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
-              <MagicWandIcon className="w-3.5 h-3.5" />
+              <RiMagicLine className="w-3.5 h-3.5" />
               Тратьте МР, чтобы получать XP
             </div>
           </CardContent>

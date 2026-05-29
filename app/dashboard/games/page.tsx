@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RocketIcon, TargetIcon, DiscIcon, GridIcon, UpdateIcon } from "@radix-ui/react-icons";
+import { RiRocketLine, RiCrosshairLine, RiGridLine, RiRefreshLine } from "react-icons/ri";
 import Link from "next/link";
 
 const games = [
@@ -11,7 +11,7 @@ const games = [
     id: "slots",
     title: "Слоты",
     description: "Испытай удачу в игровом автомате.",
-    icon: DiscIcon,
+    icon: RiRefreshLine,
     color: "bg-amber-500/10 text-amber-500",
     href: "/dashboard/games/slots",
     tag: "Популярно",
@@ -20,7 +20,7 @@ const games = [
     id: "roulette",
     title: "Рулетка",
     description: "Выживи и удвой свой капитал.",
-    icon: TargetIcon,
+    icon: RiCrosshairLine,
     color: "bg-red-500/10 text-red-500",
     href: "/dashboard/games/roulette",
     tag: "Hardcore",
@@ -29,7 +29,7 @@ const games = [
     id: "ttt",
     title: "Крестики-Нолики",
     description: "Победи ИИ в классической игре.",
-    icon: GridIcon,
+    icon: RiGridLine,
     color: "bg-blue-500/10 text-blue-500",
     href: "/dashboard/games/ttt",
     tag: "Новинка",
@@ -38,7 +38,7 @@ const games = [
     id: "coinflip",
     title: "Орел и Решка",
     description: "Классическая игра на удачу 50/50.",
-    icon: UpdateIcon,
+    icon: RiRefreshLine,
     color: "bg-yellow-500/10 text-yellow-500",
     href: "/dashboard/games/coinflip",
     tag: "Легко",
@@ -81,7 +81,7 @@ export default function GamesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 flex items-center group">
-                    Играть <RocketIcon className="ml-1.5 w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    Играть <RiRocketLine className="ml-1.5 w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                 </CardContent>
               </Card>

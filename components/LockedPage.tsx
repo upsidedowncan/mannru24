@@ -1,8 +1,8 @@
 "use client";
 
-import { LockClosedIcon, ChevronRightIcon, MagicWandIcon } from "@radix-ui/react-icons";
+import { RiLockPasswordLine, RiArrowRightSLine, RiMagicLine } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 interface LockedPageProps {
@@ -16,7 +16,7 @@ export function LockedPage({ title, description, requiredLevel, currentLevel }: 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
       <div className="mb-8 p-6 rounded-full bg-secondary/50 border border-border">
-        <LockClosedIcon className="w-12 h-12 text-muted-foreground" />
+        <RiLockPasswordLine className="w-12 h-12 text-muted-foreground" />
       </div>
 
       <h1 className="text-3xl font-bold mb-3 tracking-tight">{title}</h1>
@@ -51,12 +51,12 @@ export function LockedPage({ title, description, requiredLevel, currentLevel }: 
       <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
         <Button asChild className="flex-1 shadow-[0_4px_12px_rgba(59,130,246,0.3)]" variant="gradient">
           <Link href="/dashboard/tasks">
-            Набрать опыт <MagicWandIcon className="ml-2 w-4 h-4" />
+            Набрать опыт <RiMagicLine className="ml-2 w-4 h-4" />
           </Link>
         </Button>
         <Button asChild variant="outline" className="flex-1">
           <Link href="/dashboard">
-            На главную <ChevronRightIcon className="ml-2 w-4 h-4" />
+            На главную <RiArrowRightSLine className="ml-2 w-4 h-4" />
           </Link>
         </Button>
       </div>

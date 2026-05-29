@@ -1,276 +1,168 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import {
-  ArrowTopRightIcon,
-  FaceIcon,
-  CopyIcon,
-  CheckIcon,
-  LockClosedIcon,
-  ExclamationTriangleIcon,
-  TrashIcon,
-  PlusIcon,
-  InfoCircledIcon,
-} from "@radix-ui/react-icons";
-import { withAccess } from "@/components/AccessGuard";
-import { CreateCardDialog } from "@/components/CreateCardDialog";
-import type { Transaction, Card as CardType } from "@/lib/db";
-import { tierMeta } from "@/components/BankCard";
-import { useProgression } from "@/lib/progression";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RiSendPlaneLine, RiUserLine, RiInformationLine, RiBankCardLine } from "react-icons/ri";
+import { toast } from "sonner";
+import type { Card as CardType } from "@/lib/db";
 import { useRouter } from "next/navigation";
+import { tierMeta } from "@/components/BankCard";
+import { withAccess } from "@/components/AccessGuard";
 
 function TransfersPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [cards, setCards] = useState<CardType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [targetCode, setTargetCode] = useState("");
   const [amount, setAmount] = useState("");
-  const [emojiCode, setEmojiCode] = useState("");
-  const [sourceCardId, setSourceCardId] = useState<string>("");
+  const [selectedCardId, setSelectedCardId] = useState("");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const { triggerLevelUps, isReadOnly } = useProgression();
   const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const [cardsRes, txRes] = await Promise.all([
-        fetch("/api/cards"),
-        fetch("/api/transactions?limit=10")
-      ]);
+    fetch("/api/cards")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCards(data);
+          if (data.length > 0) setSelectedCardId(data[0].id);
+        }
+        setLoading(false);
+      });
+  }, []);
 
-      if (cardsRes.status === 401 || txRes.status === 401) {
-        router.push("/login");
-        return;
-      }
-
-      const cardsData = await cardsRes.json();
-      const txData = await txRes.json();
-
-      const fetchedCards = Array.isArray(cardsData) ? cardsData : [];
-      setCards(fetchedCards);
-      if (fetchedCards.length > 0 && !sourceCardId) {
-        setSourceCardId(fetchedCards[0].id);
-      }
-      setTransactions(Array.isArray(txData) ? txData : []);
-    };
-    fetchData();
-  }, [router, sourceCardId]);
-
-  const emojiArray = useMemo(() => {
-    return Array.from(emojiCode);
-  }, [emojiCode]);
-
-  const isValid = emojiArray.length === 4;
-
-  const selectedSourceCard = cards.find(c => c.id === sourceCardId);
-  const isRewardsSource = selectedSourceCard?.tier === "rewards";
-  const commission = isRewardsSource ? Math.round(parseFloat(amount || "0") * 0.06) : 0;
-  const totalDeduction = parseFloat(amount || "0") + commission;
-
-  const handleSend = async () => {
-    if (!isValid || !amount) {
-      setError("Адрес получателя должен состоять ровно из 4-х эмодзи!");
-      return;
-    }
-    setError(null);
+  const handleTransfer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCardId || !targetCode || !amount) return;
     setSending(true);
-    const res = await fetch("/api/transactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: `Перевод по коду ${emojiCode}`,
-        category: "Переводы",
-        amount: -parseFloat(amount),
-        emojiCode,
-        cardId: sourceCardId
-      }),
-    });
-    const data = await res.json();
 
-    if (res.status !== 200) {
-      setError(data.error || "Ошибка перевода");
+    try {
+      const res = await fetch("/api/transactions/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromCardId: selectedCardId,
+          toEmojiCode: targetCode,
+          amount: parseFloat(amount),
+          description: "Перевод по emoji-коду",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Перевод успешно выполнен!");
+        setAmount("");
+        setTargetCode("");
+        // Refresh cards
+        const cardsRes = await fetch("/api/cards");
+        const cardsData = await cardsRes.json();
+        setCards(cardsData);
+      } else {
+        toast.error(data.error || "Ошибка перевода");
+      }
+    } catch (err) {
+      toast.error("Сетевая ошибка");
+    } finally {
       setSending(false);
-      return;
     }
-
-    if (data.levelUps?.length) {
-      triggerLevelUps(data.levelUps, data.level, data.xp, data.currentXp, data.nextXp);
-    }
-    if (data.completedTasks?.length) setCompletedTasks(data.completedTasks);
-    setEmojiCode(""); setAmount("");
-    const txRes = await fetch("/api/transactions?limit=10");
-    setTransactions(await txRes.json());
-    setSending(false);
-    setTimeout(() => setCompletedTasks([]), 4000);
   };
 
-  const copyCode = (code: string, id: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const emojiCards = cards.filter((c) => !!c.emojiCode);
-  const basicCards = cards.filter((c) => !c.emojiCode);
+  if (loading) return <div className="space-y-6"><div className="h-8 w-48 bg-secondary rounded animate-pulse" /><div className="h-[400px] bg-secondary rounded-xl animate-pulse" /></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Переводы</h1>
-          <p className="text-muted-foreground text-sm mt-1">Мгновенные переводы по секретному emoji-коду</p>
-        </div>
-        {!isReadOnly && <CreateCardDialog onCreated={() => fetch("/api/cards").then(r => r.json()).then(setCards)} existingCards={cards.map(c => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${tierMeta[c.tier].label} ••${c.number.slice(-4)}` }))} />}
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Переводы</h1>
+        <p className="text-muted-foreground text-sm mt-1">Мгновенные переводы по emoji-коду</p>
       </div>
 
-      {completedTasks.length > 0 && (
-        <Card className="border-emerald-500/50 bg-emerald-500/5">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><FaceIcon className="w-5 h-5 text-emerald-500" /></div>
-              <div><p className="font-medium text-emerald-500">Задание выполнено!</p><p className="text-sm text-muted-foreground">Вам начислены бонусные баллы</p></div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="bg-zinc-950 border-zinc-800">
-        <CardHeader><CardTitle className="text-white">Отправить перевод</CardTitle><CardDescription>Введите 4-эмодзи код получателя</CardDescription></CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <Label className="text-zinc-400">Emoji-код (Ровно 4 символа)</Label>
-            <div className="flex gap-2">
-              {[0, 1, 2, 3].map((idx) => (
-                <div key={idx} className="w-14 h-14 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-2xl shadow-inner">
-                  {emojiArray[idx] || ""}
-                </div>
-              ))}
-              {emojiArray.length > 0 && (
-                 <Button variant="ghost" size="icon" onClick={() => setEmojiCode("")} className="h-14 w-14 rounded-xl border border-zinc-900 hover:bg-zinc-900">
-                   <TrashIcon className="w-5 h-5 text-zinc-500" />
-                 </Button>
-              )}
-            </div>
-
-            <div className="flex gap-2 flex-wrap max-w-md pt-2">
-              {["🦒","🐼","🐦","🦁","🦊","🐻","🐯","🐹","🐰","🐨"].map((e) => (
-                <button
-                  key={e}
-                  disabled={emojiArray.length >= 4}
-                  onClick={() => setEmojiCode((prev) => prev + e)}
-                  className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-lg flex items-center justify-center"
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <RiSendPlaneLine className="w-5 h-5 text-primary" /> Новый перевод
+          </CardTitle>
+          <CardDescription>Введите код получателя и сумму перевода</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleTransfer} className="space-y-6">
             <div className="space-y-2">
-              <Label className="text-zinc-400">Списать с карты</Label>
-              <select
-                value={sourceCardId}
-                onChange={(e) => setSourceCardId(e.target.value)}
-                className="w-full h-12 bg-zinc-900 border border-zinc-800 rounded-xl px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none"
-              >
-                {cards.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {tierMeta[c.tier]?.label || c.tier} ••{c.number.slice(-4)} ({c.balance.toLocaleString()} MR)
-                  </option>
-                ))}
-              </select>
+              <Label>Списать с карты</Label>
+              <Select value={selectedCardId} onValueChange={setSelectedCardId}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Выберите карту" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cards.map((card) => (
+                    <SelectItem key={card.id} value={card.id}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-sm ${tierMeta[card.tier].gradient}`} />
+                        <span>{tierMeta[card.tier].label} ••{card.number.slice(-4)}</span>
+                        <span className="ml-2 text-muted-foreground">({card.balance.toLocaleString("ru")} МР)</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-zinc-400">Сумма перевода</Label>
+              <Label htmlFor="target">Emoji-код получателя</Label>
               <div className="relative">
                 <Input
+                  id="target"
+                  placeholder="🦒🐼🐦🦁"
+                  value={targetCode}
+                  onChange={(e) => setTargetCode(e.target.value)}
+                  className="h-12 pl-10"
+                />
+                <RiUserLine className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              </div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1.5 px-1">
+                <RiInformationLine className="w-3 h-3" /> Код состоит из 4-х эмодзи
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Сумма перевода (МР)</Label>
+              <div className="relative">
+                <Input
+                  id="amount"
                   type="number"
+                  placeholder="0"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0"
-                  className="bg-zinc-900 border-zinc-800 text-white text-2xl font-bold pr-12 h-14 focus:ring-blue-500/20"
+                  className="h-12 pl-10"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 text-lg font-mono">MR</span>
+                <RiBankCardLine className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
               </div>
-
-              {isRewardsSource && amount && (
-                <div className="mt-2 flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <InfoCircledIcon className="w-4 h-4 text-amber-500" />
-                  <div className="text-xs text-amber-200/80">
-                    <p>Комиссия за перевод с Карты Подарков: <span className="text-amber-500 font-bold">{commission} MR (6%)</span></p>
-                    <p>Всего будет списано: <span className="font-bold">{totalDeduction} MR</span></p>
-                  </div>
-                </div>
-              )}
             </div>
-          </div>
 
-          {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              <ExclamationTriangleIcon className="w-4 h-4" />
-              {error}
-            </div>
-          )}
-
-          <Separator className="bg-zinc-900" />
-
-          <Button
-            variant="gradient"
-            className="w-full h-14 text-lg font-bold transition-all disabled:opacity-50 shadow-[0_4px_12px_rgba(59,130,246,0.3)]"
-            onClick={handleSend}
-            disabled={sending || !amount || !isValid || isReadOnly}
-          >
-            {sending ? "Транзакция..." : `Перевести ${amount || 0} MR`} <ArrowTopRightIcon className="ml-2 w-5 h-5" />
-          </Button>
+            <Button type="submit" className="w-full h-12 text-base font-semibold" variant="gradient" disabled={sending}>
+              {sending ? "Отправка..." : "Отправить деньги"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 
-      <Card className="bg-zinc-950 border-zinc-800">
-        <CardHeader><CardTitle className="text-white">Мои реквизиты</CardTitle><CardDescription>Коды ваших активных карт</CardDescription></CardHeader>
-        <CardContent className="space-y-3">
-          {emojiCards.map((card) => (
-            <div key={card.id} className="flex items-center justify-between p-4 rounded-xl border border-zinc-900 bg-zinc-900/50">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-2xl shadow-xl">{card.emojiCode}</div>
-                <div>
-                  <p className="text-sm font-bold text-zinc-200">{card.holder}</p>
-                  <p className="text-xs text-zinc-500 uppercase tracking-widest">{tierMeta[card.tier].label} ••{card.number.slice(-4)}</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" className="bg-zinc-950 border-zinc-800 hover:bg-zinc-900 text-zinc-300" onClick={() => card.emojiCode && copyCode(card.emojiCode, card.id)}>
-                {copiedId === card.id ? <CheckIcon className="w-3.5 h-3.5 text-emerald-500" /> : <CopyIcon className="w-3.5 h-3.5" />}
-                {copiedId === card.id ? "Ок" : "Копи"}
-              </Button>
+      <Card className="bg-blue-500/5 border-blue-500/20">
+        <CardContent className="pt-6">
+          <div className="flex gap-3">
+            <RiInformationLine className="w-5 h-5 text-blue-500 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-blue-400">Безопасные переводы</p>
+              <p className="text-xs text-blue-500/70 leading-relaxed">
+                Все переводы внутри системы Маннру Банк осуществляются мгновенно и без комиссии для большинства тарифов.
+                Будьте внимательны при вводе emoji-кода получателя.
+              </p>
             </div>
-          ))}
-          {basicCards.length > 0 && (
-            <div className="space-y-2">
-              {basicCards.map((card) => (
-                <div key={card.id} className="flex items-center justify-between p-4 rounded-xl border border-zinc-900 bg-zinc-900/20 opacity-40">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center"><LockClosedIcon className="w-5 h-5 text-zinc-700" /></div>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-500">{card.holder}</p>
-                      <p className="text-xs text-zinc-600 uppercase tracking-widest">{tierMeta[card.tier].label} ••{card.number.slice(-4)}</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-[10px] border-zinc-800">Gold+</Badge>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
 export default withAccess(TransfersPage, "/dashboard/transfers");

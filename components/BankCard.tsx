@@ -1,6 +1,6 @@
 "use client";
 
-import { BoxIcon } from "@radix-ui/react-icons";
+import { RiBankCard2Line } from "react-icons/ri";
 import type { CardTier } from "@/lib/db";
 
 interface BankCardProps {
@@ -45,7 +45,7 @@ export function BankCard({ tier, number, holder, balance, expiry, emojiCode }: B
             <span className="text-lg">{emojiCode}</span>
           </div>
         )}
-        {!emojiCode && <BoxIcon className={`w-5 h-5 ${style.subtext} rotate-90`} />}
+        {!emojiCode && <RiBankCard2Line className={`w-5 h-5 ${style.subtext}`} />}
       </div>
 
       <div className="relative z-10">

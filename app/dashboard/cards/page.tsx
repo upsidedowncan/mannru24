@@ -11,12 +11,13 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { CheckIcon, IdCardIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import { RiCheckboxCircleFill, RiIdCardLine, RiDeleteBinLine, RiArrowLeftSLine, RiArrowRightSLine, RiCheckboxBlankCircleLine } from "react-icons/ri";
 import type { Card as CardType, CardTier } from "@/lib/db";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useMediaQuery } from "@/lib/utils";
 import { useProgression } from "@/lib/progression";
+import { toast } from "sonner";
 
 const tierOrder: CardTier[] = ["bronze", "silver", "gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
 
@@ -44,12 +45,12 @@ function TariffCarousel({ onSelect, existingCards, isReadOnly }: { onSelect: () 
     <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden perspective-[1200px]">
       <div className="absolute top-1/2 left-4 z-20 -translate-y-1/2">
         <Button variant="outline" size="icon" className="rounded-full bg-zinc-900/50 border-zinc-800" onClick={prev}>
-          <ChevronLeftIcon className="w-6 h-6" />
+          <RiArrowLeftSLine className="w-6 h-6" />
         </Button>
       </div>
       <div className="absolute top-1/2 right-4 z-20 -translate-y-1/2">
         <Button variant="outline" size="icon" className="rounded-full bg-zinc-900/50 border-zinc-800" onClick={next}>
-          <ChevronRightIcon className="w-6 h-6" />
+          <RiArrowRightSLine className="w-6 h-6" />
         </Button>
       </div>
 
@@ -125,7 +126,9 @@ function TariffCarousel({ onSelect, existingCards, isReadOnly }: { onSelect: () 
 export default function CardsPage() {
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteIds, setDeleteIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const { isReadOnly } = useProgression();
 
@@ -150,11 +153,40 @@ export default function CardsPage() {
     fetchCards();
   }, []);
 
-  const deleteCard = async () => {
-    if (!deleteId) return;
-    await fetch(`/api/cards?id=${deleteId}`, { method: "DELETE" });
-    setDeleteId(null);
-    fetchCards();
+  const deleteCards = async () => {
+    if (deleteIds.length === 0) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/cards", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: deleteIds }),
+      });
+      if (res.ok) {
+        toast.success(deleteIds.length === 1 ? "Карта удалена" : `Удалено карт: ${deleteIds.length}`);
+        setSelectedIds((prev) => prev.filter((id) => !deleteIds.includes(id)));
+        fetchCards();
+      } else {
+        toast.error("Ошибка при удалении");
+      }
+    } catch (error) {
+      toast.error("Сетевая ошибка");
+    } finally {
+      setIsDeleting(false);
+      setDeleteIds([]);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) =>
+      prev.length === cards.length ? [] : cards.map((c) => c.id)
+    );
   };
 
   const cardLabels = cards.map((c) => ({ id: c.id, tier: c.tier, balance: c.balance, label: `${tierMeta[c.tier]?.label || c.tier} ••${c.number.slice(-4)}` }));
@@ -177,41 +209,80 @@ export default function CardsPage() {
 
         <TabsContent value="my" className="mt-6">
           {cards.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cards.map((card) => (
-                <div key={card.id} className="relative group">
-                  <BankCard
-                    tier={card.tier}
-                    number={card.number}
-                    holder={card.holder}
-                    balance={card.balance}
-                    expiry={card.expiry}
-                    emojiCode={card.emojiCode}
-                  />
-                  {!isReadOnly && (
-                    <div className="absolute top-2 right-2 flex gap-1">
-                      <UpgradeCardDialog card={card} allCards={cardLabels} onUpgraded={fetchCards} />
-                      <button
-                        onClick={() => setDeleteId(card.id)}
-                        className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
+            <div className="space-y-6">
+              {!isReadOnly && (
+                <div className="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={toggleSelectAll}
+                      className="flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedIds.length === cards.length ? "bg-blue-600 border-blue-600" : "border-zinc-700"}`}>
+                        {selectedIds.length === cards.length && <RiCheckboxCircleFill className="w-4 h-4 text-white" />}
+                      </div>
+                      Выбрать все
+                    </button>
+                    {selectedIds.length > 0 && (
+                      <span className="text-sm text-zinc-500">{selectedIds.length} выбрано</span>
+                    )}
+                  </div>
+                  {selectedIds.length > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 gap-2"
+                      onClick={() => setDeleteIds(selectedIds)}
+                    >
+                      <RiDeleteBinLine className="w-4 h-4" /> Удалить выбранные
+                    </Button>
                   )}
                 </div>
-              ))}
-              {!isReadOnly && cards.length < 25 && (
-                <div className="aspect-[1.586/1] border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center group hover:border-zinc-700 transition-colors cursor-pointer">
-                  <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
-                </div>
               )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cards.map((card) => (
+                  <div key={card.id} className="relative group">
+                    <div
+                      onClick={() => !isReadOnly && toggleSelect(card.id)}
+                      className={`cursor-pointer transition-all ${selectedIds.includes(card.id) ? "ring-2 ring-blue-600 ring-offset-4 ring-offset-black rounded-xl scale-[0.98]" : ""}`}
+                    >
+                      <BankCard
+                        tier={card.tier}
+                        number={card.number}
+                        holder={card.holder}
+                        balance={card.balance}
+                        expiry={card.expiry}
+                        emojiCode={card.emojiCode}
+                      />
+                    </div>
+                    {!isReadOnly && (
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${selectedIds.includes(card.id) ? "bg-blue-600 text-white" : "bg-black/50 text-white"}`}>
+                          <RiCheckboxCircleFill className="w-4 h-4" />
+                        </div>
+                        <UpgradeCardDialog card={card} allCards={cardLabels} onUpgraded={fetchCards} />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteIds([card.id]); }}
+                          className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                        >
+                          <RiDeleteBinLine className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {!isReadOnly && cards.length < 25 && (
+                  <div className="aspect-[1.586/1] border-2 border-dashed border-zinc-800 rounded-xl flex items-center justify-center group hover:border-zinc-700 transition-colors cursor-pointer">
+                    <CreateCardDialog onCreated={fetchCards} existingCards={cardLabels} />
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <Card className="bg-zinc-950 border-zinc-900">
               <CardContent className="pt-6 flex flex-col items-center text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
-                  <IdCardIcon className="w-8 h-8 text-zinc-500" />
+                  <RiIdCardLine className="w-8 h-8 text-zinc-500" />
                 </div>
                 <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
                 <p className="text-zinc-500 text-sm mb-4">Выберите подходящий тариф и начните тратить воображаемые деньги.</p>
@@ -231,7 +302,7 @@ export default function CardsPage() {
                   <ul className="space-y-1">
                     {t.features.map((f, i) => (
                       <li key={i} className="text-xs text-zinc-500 flex items-center gap-2">
-                        <CheckIcon className="w-3 h-3 text-blue-500" /> {f}
+                        <RiCheckboxCircleFill className="w-3 h-3 text-blue-500" /> {f}
                       </li>
                     ))}
                   </ul>
@@ -287,17 +358,25 @@ export default function CardsPage() {
         </TabsContent>
       </Tabs>
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={deleteIds.length > 0} onOpenChange={(open) => !open && setDeleteIds([])}>
         <AlertDialogContent className="bg-zinc-950 border-zinc-800">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Удалить карту?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">
+              {deleteIds.length === 1 ? "Удалить карту?" : `Удалить ${deleteIds.length} карт?`}
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-500">
-              Это действие нельзя отменить. Ваша элитная карта превратится в тыкву.
+              Это действие нельзя отменить. {deleteIds.length === 1 ? "Ваша элитная карта превратится" : "Ваши элитные карты превратятся"} в тыкву.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800">Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteCard} className="bg-red-600 hover:bg-red-700 text-white border-none">Уничтожить</AlertDialogAction>
+            <AlertDialogAction
+              onClick={deleteCards}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white border-none"
+            >
+              {isDeleting ? "Уничтожение..." : "Уничтожить"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

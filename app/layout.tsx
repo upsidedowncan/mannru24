@@ -4,7 +4,6 @@ import "./globals.css";
 import { ProgressionProvider } from "@/lib/progression";
 import { MarketProvider } from "@/lib/market";
 import { LevelUpDialog } from "@/components/LevelUpDialog";
-import { GlobalOverlays } from "@/components/GlobalOverlays";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +33,6 @@ export default function RootLayout({
       <body className="min-h-full bg-background text-foreground antialiased">
         <ProgressionProvider>
           <MarketProvider>
-            <GlobalOverlays />
             {children}
             <LevelUpDialog />
           </MarketProvider>

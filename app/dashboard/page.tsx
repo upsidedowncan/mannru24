@@ -9,26 +9,25 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
-  ArrowTopRightIcon,
-  ArrowBottomLeftIcon,
-  PieChartIcon,
-  IdCardIcon,
-  PaperPlaneIcon,
-  ReaderIcon,
-  PlusIcon,
-  ChevronRightIcon,
-  CardStackIcon,
-  LockClosedIcon,
-  ExclamationTriangleIcon,
-  ArchiveIcon,
-} from "@radix-ui/react-icons";
+  RiArrowLeftDownLine,
+  RiArrowRightUpLine,
+  RiPieChartLine,
+  RiIdCardLine,
+  RiSendPlaneLine,
+  RiAddLine,
+  RiArrowRightSLine,
+  RiBankCard2Line,
+  RiLockLine,
+  RiAlertLine,
+  RiGiftLine,
+  RiLineChartLine,
+  RiBillLine,
+} from "react-icons/ri";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Card as CardType, Transaction, UserProfile } from "@/lib/db";
 import { useProgression } from "@/lib/progression";
-import { SocialCreditMeter } from "@/components/SocialCreditMeter";
-import { SystemLogs } from "@/components/SystemLogs";
 
 export default function DashboardPage() {
   const [cards, setCards] = useState<CardType[]>([]);
@@ -76,22 +75,19 @@ export default function DashboardPage() {
     if (dailyClaiming || cards.length === 0 || isReadOnly) return;
     setDailyClaiming(true);
     try {
-      // Satirical daily reward: random small amount
       const amount = Math.floor(Math.random() * 50) + 10;
       const res = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "Ежедневная подачка",
+          name: "Ежедневная награда",
           category: "Бонусы",
           amount,
           cardId: cards[0].id
         }),
       });
       if (res.ok) {
-        toast.success(`Вы получили ${amount} MR!`, {
-          description: "Не потратьте всё сразу (хотя нам всё равно).",
-        });
+        toast.success(`Вы получили ${amount} MR!`);
         fetchData();
       }
     } finally {
@@ -102,17 +98,18 @@ export default function DashboardPage() {
   const totalExpense = Math.abs(transactions.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0));
 
   const stats = [
-    { label: "Баланс", value: `${totalBalance.toLocaleString("ru")} МР`, sub: `${cards.length} карт`, icon: IdCardIcon },
-    { label: "Доходы", value: `+${totalIncome.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: ArrowBottomLeftIcon },
-    { label: "Расходы", value: `${totalExpense.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: ArrowTopRightIcon },
-    { label: "Бонусы", value: user ? `${user.bonusBalance.toLocaleString("ru")}` : "0", sub: user ? `Уровень ${user.level}` : "", icon: PieChartIcon },
+    { label: "Баланс", value: `${totalBalance.toLocaleString("ru")} МР`, sub: `${cards.length} карт`, icon: RiIdCardLine },
+    { label: "Доходы", value: `+${totalIncome.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: RiArrowLeftDownLine },
+    { label: "Расходы", value: `${totalExpense.toLocaleString("ru")} МР`, sub: "В этом месяце", icon: RiArrowRightUpLine },
+    { label: "Бонусы", value: user ? `${user.bonusBalance.toLocaleString("ru")}` : "0", sub: user ? `Уровень ${user.level}` : "", icon: RiPieChartLine },
+    { label: "Уровень", value: user?.level || 1, sub: "Прогресс", icon: RiPieChartLine },
   ];
 
   const quickActions = [
-    { label: "Перевод", icon: PaperPlaneIcon, level: 5, href: "/dashboard/transfers" },
-    { label: "Оплата", icon: ReaderIcon, level: 1, href: "/dashboard" },
-    { label: "Пополнить", icon: PlusIcon, level: 1, href: "/dashboard" },
-    { label: "Инвестиции", icon: ArrowTopRightIcon, level: 5, href: "/dashboard/investments" },
+    { label: "Перевод", icon: RiSendPlaneLine, level: 5, href: "/dashboard/transfers" },
+    { label: "Оплата", icon: RiBillLine, level: 1, href: "/dashboard" },
+    { label: "Пополнить", icon: RiAddLine, level: 1, href: "/dashboard" },
+    { label: "Инвестиции", icon: RiLineChartLine, level: 5, href: "/dashboard/investments" },
   ];
 
   if (loading) {
@@ -120,7 +117,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="h-8 w-48 bg-secondary rounded animate-pulse" />
         <div className="flex gap-4"><div className="w-[300px] h-[189px] bg-secondary rounded-xl animate-pulse" /></div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[1,2,3,4].map((i) => <div key={i} className="h-24 bg-secondary rounded-xl animate-pulse" />)}</div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">{[1,2,3,4,5].map((i) => <div key={i} className="h-24 bg-secondary rounded-xl animate-pulse" />)}</div>
       </div>
     );
   }
@@ -147,7 +144,7 @@ export default function DashboardPage() {
         ) : (
           <Card>
             <CardContent className="pt-6 flex flex-col items-center text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4"><CardStackIcon className="w-8 h-8 text-muted-foreground" /></div>
+              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4"><RiBankCard2Line className="w-8 h-8 text-muted-foreground" /></div>
               <h3 className="text-lg font-medium mb-1">У вас пока нет карт</h3>
               <p className="text-muted-foreground text-sm mb-4">Создайте свою первую карту и получите 1 000 МР</p>
               {!isReadOnly && <CreateCardDialog onCreated={fetchData} existingCards={[]} />}
@@ -155,23 +152,22 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card
-            className="cursor-pointer hover:border-blue-500/50 transition-colors group relative overflow-hidden"
+            className="cursor-pointer hover:border-primary/50 transition-colors group relative overflow-hidden"
             onClick={claimDaily}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-blue-400">Ежедневная награда</CardTitle>
-              <ArchiveIcon className={`w-4 h-4 text-blue-500 ${dailyClaiming ? "animate-bounce" : ""}`} />
+              <CardTitle className="text-sm font-medium text-primary">Награда</CardTitle>
+              <RiGiftLine className={`w-4 h-4 text-primary ${dailyClaiming ? "animate-bounce" : ""}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">Получить</div>
-              <p className="text-[10px] text-zinc-500 mt-1 uppercase tracking-tighter">Нажми, если не гордый</p>
+              <div className="text-2xl font-bold">Получить</div>
+              <p className="text-xs text-muted-foreground mt-1">Ежедневный бонус</p>
             </CardContent>
           </Card>
-          <SocialCreditMeter level={user?.level || 1} balance={totalBalance} />
-          {stats.slice(0, 3).map((stat) => (
+          {stats.map((stat) => (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
@@ -195,7 +191,7 @@ export default function DashboardPage() {
                 </div>
                 {isLocked && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800">
-                    <LockClosedIcon className="w-2 h-2 text-zinc-500" />
+                    <RiLockLine className="w-2 h-2 text-zinc-500" />
                   </div>
                 )}
               </div>
@@ -208,7 +204,7 @@ export default function DashboardPage() {
                     <button
                       onClick={() => toast.error(`Куда лезешь?`, {
                         description: `Эта функция доступна только для элиты ${action.level} уровня. Качайся.`,
-                        icon: <ExclamationTriangleIcon className="w-4 h-4 text-red-500" />
+                        icon: <RiAlertLine className="w-4 h-4 text-red-500" />
                       })}
                       className="flex flex-col items-center gap-2 p-4 rounded-lg border transition-all bg-zinc-950/50 border-zinc-900 opacity-50 cursor-pointer"
                     >
@@ -233,39 +229,34 @@ export default function DashboardPage() {
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            {transactions.length > 0 && (
-              <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div><CardTitle>Последние операции</CardTitle><CardDescription>Ваши последние транзакции</CardDescription></div>
-              <Button variant="ghost" size="sm" className="gap-1">Все <ChevronRightIcon className="w-3.5 h-3.5" /></Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {transactions.map((tx, i) => (
-                  <div key={tx.id}>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <p className="text-sm font-medium">{tx.name}</p>
-                        <p className="text-xs text-muted-foreground">{tx.category}</p>
+        <div className="grid grid-cols-1 gap-6">
+          {transactions.length > 0 && (
+            <Card className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div><CardTitle>Последние операции</CardTitle><CardDescription>Ваши последние транзакции</CardDescription></div>
+                <Button variant="ghost" size="sm" className="gap-1">Все <RiArrowRightSLine className="w-3.5 h-3.5" /></Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {transactions.map((tx, i) => (
+                    <div key={tx.id}>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium">{tx.name}</p>
+                          <p className="text-xs text-muted-foreground">{tx.category}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-medium ${tx.amount > 0 ? "text-emerald-500" : ""}`}>{tx.amount > 0 ? "+" : ""}{tx.amount.toLocaleString("ru")} МР</p>
+                          <p className="text-xs text-muted-foreground">{tx.date}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-medium ${tx.amount > 0 ? "text-emerald-500" : ""}`}>{tx.amount > 0 ? "+" : ""}{tx.amount.toLocaleString("ru")} МР</p>
-                        <p className="text-xs text-muted-foreground">{tx.date}</p>
-                      </div>
+                      {i < transactions.length - 1 && <Separator className="mt-4" />}
                     </div>
-                    {i < transactions.length - 1 && <Separator className="mt-4" />}
-                  </div>
-                ))}
-              </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-          <div className="lg:col-span-1">
-            <SystemLogs />
-          </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </TooltipProvider>
