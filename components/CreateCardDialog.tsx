@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusIcon, IdCardIcon, ArrowTopRightIcon, LockClosedIcon } from "@radix-ui/react-icons";
+import { RiAddLine, RiIdCardLine, RiArrowRightUpLine, RiLockLine } from "react-icons/ri";
 import type { CardTier } from "@/lib/db";
 import { tierUnlockLevel } from "@/lib/constants";
 import { tierMeta } from "@/components/BankCard";
@@ -114,7 +114,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
     <Dialog open={open} onOpenChange={(o) => { if (o) { setOpen(true); setStep("tier"); } else setOpen(false); }}>
       <DialogTrigger asChild>
         <Button variant="gradient" size="sm" className="gap-1.5" disabled={isLimitReached}>
-          <PlusIcon className="w-4 h-4" />
+          <RiAddLine className="w-4 h-4" />
           {isLimitReached ? "Лимит карт (25)" : "Новая карта"}
         </Button>
       </DialogTrigger>
@@ -144,7 +144,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
                           <div className={`w-4 h-4 rounded-sm ${meta.gradient} ring-1 ring-white/10`} />
                           <span>{meta.label}</span>
                           <span className="text-muted-foreground text-xs ml-auto">{meta.cashback}</span>
-                          {locked && <LockClosedIcon className="w-3 h-3 ml-1 text-muted-foreground/50" />}
+                          {locked && <RiLockLine className="w-3 h-3 ml-1 text-muted-foreground/50" />}
                         </div>
                       </SelectItem>
                     );
@@ -184,7 +184,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
             )}
 
             <Button variant="gradient" className="w-full gap-2" onClick={handleNext} disabled={needsFunding && availableSources.length === 0}>
-              Далее <ArrowTopRightIcon className="w-4 h-4" />
+              Далее <RiArrowRightUpLine className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -239,7 +239,7 @@ export function CreateCardDialog({ onCreated, existingCards }: CreateCardDialogP
 
             <DialogFooter className="flex gap-2 sm:gap-2">
               <Button type="submit" variant="gradient" className="gap-2" disabled={loading}>
-                <IdCardIcon className="w-4 h-4" />
+                <RiIdCardLine className="w-4 h-4" />
                 {loading ? "Создание..." : "Создать"}
               </Button>
             </DialogFooter>

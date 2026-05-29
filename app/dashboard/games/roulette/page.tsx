@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { TargetIcon, UpdateIcon, ChevronLeftIcon, PersonIcon, Cross2Icon } from "@radix-ui/react-icons";
+import { RiCrosshairLine, RiRefreshLine, RiArrowLeftSLine, RiUserLine, RiCloseLine } from "react-icons/ri";
 import Link from "next/link";
 import { CardSelect } from "@/components/CardSelect";
 
@@ -55,7 +55,7 @@ export default function RoulettePage() {
         setParticipants(data.state.participants);
         setTurnIndex(data.state.turnIndex);
         setGameState("playing");
-        setLastMessage("Игра началась. Кто-то сегодня не уйдет домой.");
+        setLastMessage("Игра началась. Удачи.");
         if (data.newBalance !== undefined) setBalance(data.newBalance);
       } else {
         toast.error(data.error || "Ошибка старта");
@@ -123,33 +123,32 @@ export default function RoulettePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0">
-      <Link href="/dashboard/games" className="flex items-center gap-2 text-zinc-500 hover:text-zinc-300 transition-colors text-sm">
-        <ChevronLeftIcon /> К играм
+      <Link href="/dashboard/games" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
+        <RiArrowLeftSLine /> К играм
       </Link>
 
-      <Card className="border-zinc-900 bg-zinc-950 overflow-hidden shadow-2xl">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+      <Card>
         <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2 text-red-500 text-xl font-bold">
-            <TargetIcon className="w-6 h-6" /> РУССКАЯ РУЛЕТКА
+          <CardTitle className="flex items-center justify-center gap-2">
+            <RiCrosshairLine className="w-5 h-5" /> Русская рулетка
           </CardTitle>
-          <CardDescription className="text-xs text-zinc-500 uppercase tracking-widest">Выживите среди ботов, чтобы забрать двойную ставку</CardDescription>
+          <CardDescription>Выживите, чтобы забрать двойную ставку</CardDescription>
         </CardHeader>
         <CardContent className="min-h-[400px] flex flex-col justify-center">
           {gameState === "lobby" ? (
             <div className="max-w-md mx-auto w-full space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500 ml-1">Ставка</label>
-                  <Input type="number" value={bet} onChange={e => setBet(Number(e.target.value))} className="bg-zinc-900/50 border-zinc-800" />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ставка</label>
+                  <Input type="number" value={bet} onChange={e => setBet(Number(e.target.value))} />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500 ml-1">Карта</label>
-                  <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} className="bg-zinc-900/50 border-zinc-800" />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Карта</label>
+                  <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} />
                 </div>
               </div>
-              <Button onClick={startGame} disabled={actionLoading} className="w-full h-11 text-sm font-bold shadow-[0_4px_12px_rgba(239,68,68,0.2)]" variant="gradient">
-                {actionLoading ? <UpdateIcon className="animate-spin" /> : "НАЧАТЬ ИГРУ"}
+              <Button onClick={startGame} disabled={actionLoading} className="w-full h-11" variant="gradient">
+                {actionLoading ? <RiRefreshLine className="animate-spin" /> : "Начать игру"}
               </Button>
             </div>
           ) : (
@@ -160,18 +159,18 @@ export default function RoulettePage() {
                     key={p.id}
                     className={`p-4 rounded-xl border transition-all flex flex-col items-center gap-3 ${
                       p.isDead
-                        ? "bg-zinc-900/30 border-zinc-900 opacity-30 grayscale"
+                        ? "bg-secondary/30 opacity-30 grayscale"
                         : turnIndex === i
-                          ? "bg-red-500/5 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)] scale-105 z-10"
-                          : "bg-zinc-900/50 border-zinc-800"
+                          ? "bg-primary/5 border-primary/30 scale-105 z-10"
+                          : "bg-secondary/50"
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.isDead ? "bg-zinc-800" : "bg-zinc-800/50 border border-zinc-700"}`}>
-                      {p.isDead ? <Cross2Icon className="w-5 h-5 text-red-500" /> : <PersonIcon className="w-5 h-5 text-zinc-400" />}
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.isDead ? "bg-secondary" : "bg-secondary/50 border"}`}>
+                      {p.isDead ? <RiCloseLine className="w-5 h-5 text-destructive" /> : <RiUserLine className="w-5 h-5" />}
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-tighter text-zinc-300 truncate w-24">{p.name}</p>
-                      <p className={`text-[8px] font-bold uppercase mt-0.5 ${turnIndex === i && !p.isDead ? "text-red-500" : "text-zinc-600"}`}>
+                      <p className="text-xs font-bold truncate w-24">{p.name}</p>
+                      <p className={`text-[10px] font-medium mt-0.5 ${turnIndex === i && !p.isDead ? "text-primary" : "text-muted-foreground"}`}>
                         {p.isDead ? "ВЫБЫЛ" : turnIndex === i ? "ХОДИТ" : "ЖДЕТ"}
                       </p>
                     </div>
@@ -180,38 +179,38 @@ export default function RoulettePage() {
               </div>
 
               <div className="min-h-[160px] flex flex-col items-center justify-center space-y-6">
-                <p className="text-zinc-400 text-sm italic text-center max-w-sm">"{lastMessage}"</p>
+                <p className="text-muted-foreground text-sm italic text-center max-w-sm">"{lastMessage}"</p>
 
                 <AnimatePresence mode="wait">
                   {gameState === "playing" && participants[turnIndex]?.id === "player" ? (
                     <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -10, opacity: 0 }} className="w-full max-w-lg space-y-4">
                       <div className="flex flex-col md:flex-row gap-2">
-                        <Button onClick={() => handleMove("shoot", "player")} disabled={actionLoading} variant="destructive" className="flex-1 h-11 font-bold text-xs">В СЕБЯ</Button>
+                        <Button onClick={() => handleMove("shoot", "player")} disabled={actionLoading} variant="destructive" className="flex-1 h-11">В себя</Button>
                         <div className="flex flex-1 gap-2">
                           {participants.filter(p => p.id !== "player" && !p.isDead).map(other => (
-                            <Button key={other.id} onClick={() => handleMove("shoot", other.id)} disabled={actionLoading} className="flex-1 text-[10px] h-11" variant="outline">В {other.name.split('-')[1] || "БОТА"}</Button>
+                            <Button key={other.id} onClick={() => handleMove("shoot", other.id)} disabled={actionLoading} className="flex-1 h-11" variant="outline">В {other.name.split('-')[1] || "бота"}</Button>
                           ))}
-                          <Button onClick={() => handleMove("pass")} disabled={actionLoading} variant="secondary" className="flex-1 text-[10px] h-11">ПРОПУСК</Button>
+                          <Button onClick={() => handleMove("pass")} disabled={actionLoading} variant="secondary" className="flex-1 h-11">Пропуск</Button>
                         </div>
                       </div>
                     </motion.div>
                   ) : gameState === "playing" ? (
                     <div className="flex flex-col items-center gap-2">
-                      <UpdateIcon className="w-5 h-5 animate-spin text-red-500/50" />
-                      <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-[0.2em]">Ожидание...</p>
+                      <RiRefreshLine className="w-5 h-5 animate-spin text-primary/50" />
+                      <p className="text-xs text-muted-foreground">Ожидание хода...</p>
                     </div>
                   ) : null}
 
                   {(gameState === "won" || gameState === "lost") && (
                     <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-4">
-                      <h3 className={`text-3xl font-black uppercase italic tracking-tighter ${gameState === "won" ? "text-emerald-500" : "text-red-600"}`}>
-                        {gameState === "won" ? "ПОБЕДА" : "ГЕЙМ ОВЕР"}
+                      <h3 className={`text-3xl font-bold ${gameState === "won" ? "text-emerald-500" : "text-destructive"}`}>
+                        {gameState === "won" ? "Победа!" : "Игра окончена"}
                       </h3>
-                      <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
-                        {gameState === "won" ? `+${bet * 2} МР НАЧИСЛЕНО` : `-${bet} МР ПОТЕРЯНО`}
+                      <p className="text-muted-foreground text-sm">
+                        {gameState === "won" ? `+${bet * 2} МР начислено` : `-${bet} МР потеряно`}
                       </p>
-                      <Button onClick={() => setGameState("lobby")} variant="outline" size="sm" className="h-9 px-6 text-[10px] font-bold border-zinc-800 hover:bg-zinc-900">
-                        В ЛОББИ
+                      <Button onClick={() => setGameState("lobby")} variant="outline" size="sm">
+                        В лобби
                       </Button>
                     </motion.div>
                   )}
@@ -224,7 +223,7 @@ export default function RoulettePage() {
 
       {balance !== null && (
         <div className="text-center">
-          <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Текущий баланс: <span className="text-zinc-400">{balance.toLocaleString("ru")} МР</span></p>
+          <p className="text-sm text-muted-foreground">Текущий баланс: {balance.toLocaleString("ru")} МР</p>
         </div>
       )}
     </div>

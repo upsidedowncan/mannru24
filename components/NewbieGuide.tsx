@@ -1,17 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { RocketIcon, TargetIcon, CheckCircledIcon, LightningBoltIcon, EyeNoneIcon } from "@radix-ui/react-icons";
+import { Badge } from "@/components/ui/badge";
+import { RiRocketLine, RiCrosshairLine, RiCheckDoubleLine, RiFlashlightLine, RiEyeOffLine } from "react-icons/ri";
+
+const steps = [
+  {
+    title: "Игровой зал",
+    description: "Начните с игр, чтобы заработать первые МР и XP.",
+    icon: RiRocketLine,
+  },
+  {
+    title: "Система уровней",
+    description: "Повышайте уровень, чтобы открыть новые тарифы карт и функции.",
+    icon: RiCrosshairLine,
+  },
+  {
+    title: "Задания",
+    description: "Выполняйте ежедневные задания для быстрого прогресса.",
+    icon: RiCheckDoubleLine,
+  },
+  {
+    title: "Бонусы",
+    description: "Обменивайте баллы лояльности на реальные МР.",
+    icon: RiFlashlightLine,
+  },
+];
 
 export function NewbieGuide() {
   const [open, setOpen] = useState(false);
@@ -23,76 +39,39 @@ export function NewbieGuide() {
     }
   }, []);
 
-  const closeGuide = () => {
-    localStorage.setItem("mannru_guide_shown", "true");
+  const close = () => {
     setOpen(false);
+    localStorage.setItem("mannru_guide_shown", "true");
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[500px] bg-zinc-950 border-zinc-800 text-zinc-100">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <EyeNoneIcon className="w-6 h-6 text-blue-500" />
-            Добро пожаловать в Систему
-          </DialogTitle>
-          <DialogDescription className="text-zinc-500">
-            Краткий курс выживания для тех, кто думает, что это просто банк.
-          </DialogDescription>
-        </DialogHeader>
-
-        <ScrollArea className="max-h-[400px] pr-4">
-          <div className="space-y-6 py-4">
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-800">
-                <TargetIcon className="w-5 h-5 text-emerald-500" />
+    <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <Card className="max-w-lg w-full shadow-2xl border-primary/20">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold italic">Добро пожаловать в Маннру!</CardTitle>
+          <CardDescription>Краткое руководство для нового пользователя</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {steps.map((step, i) => (
+              <div key={i} className="flex gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <step.icon className="w-4 h-4" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold uppercase tracking-tight italic">{step.title}</h4>
+                  <p className="text-xs text-muted-foreground">{step.description}</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">Ваш статус — ничто</h4>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Вы начали с 1 уровня. Большинство функций заблокировано. Хотите переводы? Качайтесь. Хотите инвестиции? Качайтесь до 15 уровня. Мы не раздаём привилегии просто так.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-800">
-                <RocketIcon className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">Как получать XP</h4>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Тратьте воображаемые MR с карт, выполняйте циничные задания в разделе «Задания» и активируйте бонусы. Каждые 100 MR трат приносят вам 1 XP. Чем выше уровень, тем больше XP нужно для следующего.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center shrink-0 border border-zinc-800">
-                <CheckCircledIcon className="w-5 h-5 text-purple-500" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">Безопасность (ха-ха)</h4>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Мы используем 4-эмодзи коды для переводов. Не спрашивайте почему. Это выглядит солидно и абсолютно бесполезно.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-              <p className="text-[10px] text-blue-400 font-mono leading-tight">
-                Внимание: Банк Маннру не несет ответственности за вашу самооценку при получении уведомлений о недостаточном уровне.
-              </p>
-            </div>
+            ))}
           </div>
-        </ScrollArea>
-
-        <DialogFooter>
-          <Button onClick={closeGuide} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-6">
-            Я ВСЁ ПОНЯЛ, ПУСТИТЕ МЕНЯ
+          <Button onClick={close} className="w-full h-12 font-black italic" variant="gradient">
+            ПОНЯТНО, ПОЕХАЛИ! <RiRocketLine className="ml-2" />
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

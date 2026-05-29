@@ -4,55 +4,50 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { UpdateIcon, HeartIcon, CrumpledPaperIcon, ArchiveIcon } from "@radix-ui/react-icons";
+import { RiHeartLine, RiStore2Line, RiHandHeartLine, RiRefreshLine } from "react-icons/ri";
 import { CardSelect } from "@/components/CardSelect";
 
 export default function LariekPage() {
-  const [selectedCardId, setSelectedCardId] = useState("");
-  const [amount, setAmount] = useState(100);
-  const [poolBalance, setPoolBalance] = useState(0);
+  const [charityBalance, setCharityBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [donateAmount, setDonateAmount] = useState("");
+  const [selectedCardId, setSelectedCardId] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
-  const [balance, setBalance] = useState<number | null>(null);
 
-  const fetchStats = async () => {
+  const fetchBalance = async () => {
     try {
-      const res = await fetch("/api/charity");
+      const res = await fetch("/api/lariek/balance");
       const data = await res.json();
-      setPoolBalance(data.balance);
-    } catch (e) {}
+      setCharityBalance(data.balance);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetch("/api/cards")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          if (data.length > 0 && !selectedCardId) setSelectedCardId(data[0].id);
-        }
-        setLoading(false);
-      });
-    fetchStats();
+    fetchBalance();
   }, []);
 
-  const handleDeposit = async () => {
-    if (!selectedCardId || amount <= 0) return;
+  const handleDonate = async () => {
+    if (!selectedCardId || !donateAmount) return;
     setActionLoading(true);
     try {
-      const res = await fetch("/api/charity", {
+      const res = await fetch("/api/lariek/donate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "deposit", amount, cardId: selectedCardId }),
+        body: JSON.stringify({ amount: parseFloat(donateAmount), cardId: selectedCardId }),
       });
-      const data = await res.json();
       if (res.ok) {
-        toast.success("Спасибо за ваше пожертвование");
-        setPoolBalance(data.poolBalance);
-        setBalance(data.newBalance);
+        toast.success("Спасибо за пожертвование!");
+        setDonateAmount("");
+        fetchBalance();
       } else {
-        toast.error(data.error);
+        const data = await res.json();
+        toast.error(data.error || "Ошибка");
       }
     } catch (e) {
       toast.error("Сетевая ошибка");
@@ -62,20 +57,21 @@ export default function LariekPage() {
   };
 
   const handleWithdraw = async () => {
+    if (!selectedCardId) return;
     setActionLoading(true);
     try {
-      const res = await fetch("/api/charity", {
+      const res = await fetch("/api/lariek/withdraw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "withdraw" }),
+        body: JSON.stringify({ cardId: selectedCardId }),
       });
-      const data = await res.json();
       if (res.ok) {
-        toast.success("Средства зачислены на вашу карту");
-        setPoolBalance(data.poolBalance);
-        setBalance(data.newBalance);
+        const data = await res.json();
+        toast.success(`Вы получили ${data.amount} МР!`);
+        fetchBalance();
       } else {
-        toast.error(data.error);
+        const data = await res.json();
+        toast.error(data.error || "Ошибка");
       }
     } catch (e) {
       toast.error("Сетевая ошибка");
@@ -84,83 +80,74 @@ export default function LariekPage() {
     }
   };
 
-  if (loading) return <div className="space-y-6 px-4 md:px-0"><div className="h-8 w-32 bg-secondary rounded animate-pulse" /><div className="h-40 bg-secondary rounded-xl animate-pulse" /></div>;
+  if (loading) return <div className="space-y-6"><div className="h-8 w-48 bg-secondary rounded animate-pulse" /><div className="h-[400px] bg-secondary rounded-xl animate-pulse" /></div>;
 
   return (
-    <div className="space-y-6 px-4 md:px-0">
+    <div className="max-w-4xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Ларёк</h1>
-        <p className="text-muted-foreground text-sm mt-1">Социальная помощь участникам Системы</p>
+        <p className="text-muted-foreground text-sm mt-1">Благотворительный фонд системы</p>
       </div>
-
-      <Card className="bg-emerald-500/5 border-emerald-500/10 overflow-hidden relative shadow-2xl">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
-        <CardContent className="pt-8 pb-8">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em]">Доступно в пуле</p>
-              <p className="text-4xl font-black italic tracking-tighter">{poolBalance.toLocaleString("ru")} МР</p>
-            </div>
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
-              <ArchiveIcon className="w-8 h-8 text-emerald-500" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-zinc-950 border-zinc-900 shadow-xl">
+        <Card className="bg-emerald-500/5 border-emerald-500/20">
           <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-              <HeartIcon className="w-4 h-4 text-red-500" /> Стать спонсором
+            <CardTitle className="flex items-center gap-2 text-emerald-500">
+              <RiHeartLine className="w-5 h-5" /> Общий фонд
             </CardTitle>
-            <CardDescription className="text-xs text-zinc-500">Помогите нуждающимся участникам Системы</CardDescription>
+            <CardDescription>Деньги, собранные сообществом</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-zinc-600 ml-1">Карта</label>
-              <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} className="bg-zinc-900/50 border-zinc-800" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase text-zinc-600 ml-1">Сумма</label>
-              <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="bg-zinc-900/50 border-zinc-800" />
-            </div>
-            <Button onClick={handleDeposit} disabled={actionLoading} className="w-full h-11 text-xs font-bold" variant="gradient">
-              {actionLoading ? <UpdateIcon className="animate-spin" /> : "ПОЖЕРТВОВАТЬ"}
-            </Button>
+          <CardContent>
+            <div className="text-4xl font-black text-emerald-500">{charityBalance.toLocaleString("ru")} МР</div>
+            <p className="text-xs text-emerald-500/60 mt-2 uppercase tracking-widest font-bold">Собрано на помощь</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-zinc-950 border-zinc-900 shadow-xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-              <CrumpledPaperIcon className="w-4 h-4 text-zinc-400" /> Забрать пособие
+            <CardTitle className="flex items-center gap-2">
+              <RiStore2Line className="w-5 h-5 text-primary" /> Управление
             </CardTitle>
-            <CardDescription className="text-xs text-zinc-500">Для участников с балансом ниже 1 000 МР</CardDescription>
+            <CardDescription>Пожертвовать или попросить помощи</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-6 bg-zinc-900/50 border border-zinc-900 border-dashed rounded-xl text-center">
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-1">Разовая выплата</p>
-              <p className="text-3xl font-black italic tracking-tighter">100 МР</p>
+            <div className="space-y-2">
+              <Label>Выберите вашу карту</Label>
+              <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} />
             </div>
-            <div className="h-[2px]" />
-            <Button
-              onClick={handleWithdraw}
-              disabled={actionLoading || poolBalance < 100}
-              variant="outline"
-              className="w-full h-11 text-xs font-bold border-zinc-800 hover:bg-zinc-900"
-            >
-              {actionLoading ? <UpdateIcon className="animate-spin" /> : "ЗАПРОСИТЬ ПОМОЩЬ"}
-            </Button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+               <div className="space-y-2">
+                  <Input
+                    type="number"
+                    placeholder="Сумма"
+                    value={donateAmount}
+                    onChange={e => setDonateAmount(e.target.value)}
+                  />
+                  <Button
+                    className="w-full h-10"
+                    variant="emerald"
+                    onClick={handleDonate}
+                    disabled={actionLoading || !selectedCardId || !donateAmount}
+                  >
+                    {actionLoading ? <RiRefreshLine className="animate-spin" /> : <RiHandHeartLine className="mr-2" />} ПОЖЕРТВОВАТЬ
+                  </Button>
+               </div>
+               <div className="flex flex-col justify-end">
+                  <Button
+                    className="w-full h-10"
+                    variant="secondary"
+                    onClick={handleWithdraw}
+                    disabled={actionLoading || !selectedCardId}
+                  >
+                    {actionLoading ? <RiRefreshLine className="animate-spin" /> : "НУЖНА ПОМОЩЬ"}
+                  </Button>
+                  <p className="text-[9px] text-muted-foreground mt-2 text-center">Раз в день для балансов &lt; 1000 МР</p>
+               </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {balance !== null && (
-        <div className="text-center">
-          <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Текущий баланс: <span className="text-zinc-400">{balance.toLocaleString("ru")} МР</span></p>
-        </div>
-      )}
     </div>
   );
 }

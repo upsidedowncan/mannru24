@@ -4,28 +4,29 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  DashboardIcon,
-  CardStackIcon,
-  ArchiveIcon,
-  CheckIcon,
-  CounterClockwiseClockIcon,
-  LockClosedIcon,
-  MoonIcon,
-  RocketIcon,
-} from "@radix-ui/react-icons";
+  RiDashboardLine,
+  RiBankCardLine,
+  RiCheckboxLine,
+  RiStore2Line,
+  RiHistoryLine,
+  RiStarFill,
+  RiRocketLine,
+  RiMoonLine,
+  RiLockPasswordLine,
+} from "react-icons/ri";
 import { useProgression } from "@/lib/progression";
 
 import { pageUnlockLevel } from "@/lib/constants";
 import { isEventActive } from "@/lib/events";
 
 const navItems = [
-  { href: "/dashboard", label: "Главная", icon: DashboardIcon },
-  { href: "/dashboard/cards", label: "Карты", icon: CardStackIcon },
-  { href: "/dashboard/tasks", label: "Задания", icon: CheckIcon },
-  { href: "/dashboard/lariek", label: "Ларёк", icon: ArchiveIcon },
-  { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
-  { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
-  { href: "/dashboard/games", label: "Игры", icon: RocketIcon },
+  { href: "/dashboard", label: "Главная", icon: RiDashboardLine },
+  { href: "/dashboard/cards", label: "Карты", icon: RiBankCardLine },
+  { href: "/dashboard/tasks", label: "Задания", icon: RiCheckboxLine },
+  { href: "/dashboard/lariek", label: "Ларёк", icon: RiStore2Line },
+  { href: "/dashboard/history", label: "История", icon: RiHistoryLine },
+  { href: "/dashboard/bonuses", label: "Бонусы", icon: RiStarFill },
+  { href: "/dashboard/games", label: "Игры", icon: RiRocketLine },
 ];
 
 export function MobileNavbar() {
@@ -43,7 +44,7 @@ export function MobileNavbar() {
               pathname === "/dashboard/event" ? "text-emerald-500" : "text-emerald-500/60"
             }`}
           >
-            <MoonIcon className="w-5 h-5 fill-emerald-500/20" />
+            <RiMoonLine className="w-5 h-5 fill-emerald-500/20" />
             <span className="text-[10px] font-medium text-center">Курбан</span>
           </Link>
         )}
@@ -61,7 +62,7 @@ export function MobileNavbar() {
             >
               <item.icon className="w-5 h-5" />
               <span className="text-[10px] font-medium">{item.label}</span>
-              {isLocked && <LockClosedIcon className="w-2.5 h-2.5 absolute top-1 right-1" />}
+              {isLocked && <RiLockPasswordLine className="w-2.5 h-2.5 absolute top-1 right-1" />}
             </Link>
           );
         })}

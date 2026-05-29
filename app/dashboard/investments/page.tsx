@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LockClosedIcon, ArrowTopRightIcon, ArrowBottomRightIcon, DividerHorizontalIcon } from "@radix-ui/react-icons";
+import { RiLockLine, RiArrowUpLine, RiArrowDownLine, RiSeparator } from "react-icons/ri";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProgression } from "@/lib/progression";
@@ -250,7 +250,7 @@ export default function InvestmentsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-5">
         <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-          <LockClosedIcon className="w-6 h-6 text-muted-foreground" />
+          <RiLockLine className="w-6 h-6 text-muted-foreground" />
         </div>
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Инвестиционный Портал</h1>
@@ -259,7 +259,7 @@ export default function InvestmentsPage() {
           </p>
         </div>
         <Badge variant="outline" className="font-mono text-[11px]">
-          <LockClosedIcon className="w-2.5 h-2.5 mr-1.5" />
+          <RiLockLine className="w-2.5 h-2.5 mr-1.5" />
           Уровень 5 · Ваш уровень {level}
         </Badge>
       </div>
@@ -267,8 +267,8 @@ export default function InvestmentsPage() {
   }
 
   const TrendIcon =
-    priceTrend === "up" ? ArrowTopRightIcon :
-    priceTrend === "down" ? ArrowBottomRightIcon : DividerHorizontalIcon;
+    priceTrend === "up" ? RiArrowUpLine :
+    priceTrend === "down" ? RiArrowDownLine : RiSeparator;
   const trendColor =
     priceTrend === "up" ? "text-emerald-400" :
     priceTrend === "down" ? "text-red-400" : "text-foreground";

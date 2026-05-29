@@ -4,20 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  DashboardIcon,
-  CardStackIcon,
-  ArchiveIcon,
-  CheckIcon,
-  DoubleArrowLeftIcon,
-  CounterClockwiseClockIcon,
-  GearIcon,
-  ExitIcon,
-  MoonIcon,
-  LayoutIcon,
-  LockClosedIcon,
-  StarFilledIcon,
-  RocketIcon,
-} from "@radix-ui/react-icons";
+  RiDashboardLine,
+  RiBankCardLine,
+  RiCheckboxLine,
+  RiSendPlaneLine,
+  RiHistoryLine,
+  RiSettings4Line,
+  RiLogoutBoxRLine,
+  RiMoonLine,
+  RiMenuFoldLine,
+  RiMenuUnfoldLine,
+  RiLockPasswordLine,
+  RiStarFill,
+  RiRocketLine,
+  RiStore2Line,
+  RiStockLine,
+} from "react-icons/ri";
 import { Progress } from "@/components/ui/progress";
 import { useProgression } from "@/lib/progression";
 import { pageUnlockLevel } from "@/lib/constants";
@@ -25,22 +27,22 @@ import { useRouter } from "next/navigation";
 import { isEventActive } from "@/lib/events";
 
 const navItems = [
-  { href: "/dashboard", label: "Главная", icon: DashboardIcon },
-  { href: "/dashboard/cards", label: "Карты", icon: CardStackIcon },
-  { href: "/dashboard/tasks", label: "Задания", icon: CheckIcon },
-  { href: "/dashboard/history", label: "История", icon: CounterClockwiseClockIcon },
-  { href: "/dashboard/transfers", label: "Переводы", icon: DoubleArrowLeftIcon },
-  { href: "/dashboard/bonuses", label: "Бонусы", icon: ArchiveIcon },
-  { href: "/dashboard/games", label: "Игры", icon: RocketIcon },
-  { href: "/dashboard/lariek", label: "Ларёк", icon: ArchiveIcon },
-  { href: "/dashboard/investments", label: "Инвестиции", icon: StarFilledIcon },
+  { href: "/dashboard", label: "Главная", icon: RiDashboardLine },
+  { href: "/dashboard/cards", label: "Карты", icon: RiBankCardLine },
+  { href: "/dashboard/tasks", label: "Задания", icon: RiCheckboxLine },
+  { href: "/dashboard/history", label: "История", icon: RiHistoryLine },
+  { href: "/dashboard/transfers", label: "Переводы", icon: RiSendPlaneLine },
+  { href: "/dashboard/bonuses", label: "Бонусы", icon: RiStarFill },
+  { href: "/dashboard/games", label: "Игры", icon: RiRocketLine },
+  { href: "/dashboard/lariek", label: "Ларёк", icon: RiStore2Line },
+  { href: "/dashboard/investments", label: "Инвестиции", icon: RiStockLine },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { level, xp, currentXp, nextXp } = useProgression();
+  const { level, currentXp, nextXp } = useProgression();
   const kurbanActive = isEventActive("kurban");
 
   const handleLogout = async () => {
@@ -65,14 +67,14 @@ export function Sidebar() {
           onClick={() => setCollapsed(!collapsed)}
           className="p-1.5 rounded-md hover:bg-accent transition-colors"
         >
-          <LayoutIcon className="w-4 h-4" />
+          {collapsed ? <RiMenuUnfoldLine className="w-4 h-4" /> : <RiMenuFoldLine className="w-4 h-4" />}
         </button>
       </div>
 
       {!collapsed && (
         <div className="px-4 py-3 border-b">
           <div className="flex items-center gap-2 mb-1.5">
-            <StarFilledIcon className="w-3.5 h-3.5 text-amber-500" />
+            <RiStarFill className="w-3.5 h-3.5 text-amber-500" />
             <span className="text-xs font-medium">Уровень {level}</span>
           </div>
           <Progress value={nextXp > 0 ? (currentXp / nextXp) * 100 : 100} className="h-1.5" />
@@ -90,7 +92,7 @@ export function Sidebar() {
                 : "text-emerald-500/70 hover:text-emerald-500 hover:bg-emerald-500/5"
             }`}
           >
-            <MoonIcon className="w-4 h-4 flex-shrink-0 fill-emerald-500/20" />
+            <RiMoonLine className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span className="truncate">Курбан-байрам</span>}
           </Link>
         )}
@@ -117,7 +119,7 @@ export function Sidebar() {
                   {isLocked && (
                     <div className="ml-auto flex items-center gap-1">
                       <span className="text-[10px] bg-zinc-800 px-1 rounded text-zinc-500">Lvl {requiredLevel}</span>
-                      <LockClosedIcon className="w-3 h-3 text-zinc-600" />
+                      <RiLockPasswordLine className="w-3 h-3 text-zinc-600" />
                     </div>
                   )}
                 </>
@@ -132,14 +134,14 @@ export function Sidebar() {
           href="/dashboard/settings"
           className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
         >
-          <GearIcon className="w-4 h-4 flex-shrink-0" />
+          <RiSettings4Line className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Настройки</span>}
         </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-accent/50 transition-colors w-full"
         >
-          <ExitIcon className="w-4 h-4 flex-shrink-0" />
+          <RiLogoutBoxRLine className="w-4 h-4 flex-shrink-0" />
           {!collapsed && <span>Выйти</span>}
         </button>
       </div>

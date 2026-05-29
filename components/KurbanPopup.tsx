@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MoonIcon, StarFilledIcon, ArchiveIcon, Cross2Icon } from "@radix-ui/react-icons";
+import { RiMoonLine, RiStarFill, RiArchiveLine, RiCloseLine } from "react-icons/ri";
 import { useProgression } from "@/lib/progression";
 
 export function KurbanPopup() {
@@ -24,8 +24,8 @@ export function KurbanPopup() {
         <DialogHeader>
           <div className="flex justify-center mb-4">
             <div className="w-20 h-20 rounded-full bg-emerald-900 flex items-center justify-center border-4 border-emerald-800 shadow-2xl relative">
-              <MoonIcon className="w-10 h-10 text-yellow-400" />
-              <StarFilledIcon className="w-4 h-4 text-yellow-400 absolute top-4 right-4 animate-pulse" />
+              <RiMoonLine className="w-10 h-10 text-yellow-400" />
+              <RiStarFill className="w-4 h-4 text-yellow-400 absolute top-4 right-4 animate-pulse" />
             </div>
           </div>
           <DialogTitle className="text-2xl font-bold text-center text-emerald-100">
@@ -60,7 +60,7 @@ export function KurbanPopup() {
               setOpen(false);
             }}
           >
-            Получить подарки <ArchiveIcon className="w-4 h-4" />
+            Получить подарки <RiArchiveLine className="w-4 h-4" />
           </Button>
           <Button
             variant="ghost"
