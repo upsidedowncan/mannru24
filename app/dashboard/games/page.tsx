@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RiRocketLine, RiCrosshairLine, RiGridLine, RiRefreshLine } from "react-icons/ri";
+import { RiRocketLine, RiCrosshairLine, RiGridLine, RiRefreshLine, RiBankLine } from "react-icons/ri";
 import Link from "next/link";
 
 const games = [
@@ -42,6 +42,15 @@ const games = [
     color: "bg-yellow-500/10 text-yellow-500",
     href: "/dashboard/games/coinflip",
     tag: "Легко",
+  },
+  {
+    id: "cbrate",
+    title: "Ставка ЦБ",
+    description: "Угадайте решение Банка Маннру по ключевой ставке. До ×12 выплата.",
+    icon: RiBankLine,
+    color: "bg-emerald-500/10 text-emerald-500",
+    href: "/dashboard/games/cbrate",
+    tag: "Новинка",
   },
 ];
 
