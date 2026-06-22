@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { RiHeartLine, RiStore2Line, RiHandHeartLine, RiRefreshLine } from "react-icons/ri";
+import { RiHeartLine, RiStore2Line, RiHandHeartLine, RiRefreshLine, RiArrowLeftSLine } from "react-icons/ri";
 import { CardSelect } from "@/components/CardSelect";
+import Link from "next/link";
 
 export default function LariekPage() {
   const [charityBalance, setCharityBalance] = useState(0);
@@ -28,9 +29,7 @@ export default function LariekPage() {
     }
   };
 
-  useEffect(() => {
-    fetchBalance();
-  }, []);
+  useEffect(() => { fetchBalance(); }, []);
 
   const handleDonate = async () => {
     if (!selectedCardId || !donateAmount) return;
@@ -49,7 +48,7 @@ export default function LariekPage() {
         const data = await res.json();
         toast.error(data.error || "Ошибка");
       }
-    } catch (e) {
+    } catch {
       toast.error("Сетевая ошибка");
     } finally {
       setActionLoading(false);
@@ -73,23 +72,40 @@ export default function LariekPage() {
         const data = await res.json();
         toast.error(data.error || "Ошибка");
       }
-    } catch (e) {
+    } catch {
       toast.error("Сетевая ошибка");
     } finally {
       setActionLoading(false);
     }
   };
 
-  if (loading) return <div className="space-y-6"><div className="h-8 w-48 bg-secondary rounded animate-pulse" /><div className="h-[400px] bg-secondary rounded-xl animate-pulse" /></div>;
+  if (loading)
+    return (
+      <div className="space-y-6 px-4 md:px-0">
+        <div className="h-5 w-24 bg-secondary rounded animate-pulse" />
+        <div className="h-8 w-48 bg-secondary rounded animate-pulse" />
+        <div className="h-[400px] bg-secondary rounded-xl animate-pulse" />
+      </div>
+    );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0">
+      {/* Back navigation — consistent with game pages */}
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors pt-1"
+      >
+        <RiArrowLeftSLine className="w-4 h-4" />
+        На главную
+      </Link>
+
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Ларёк</h1>
         <p className="text-muted-foreground text-sm mt-1">Благотворительный фонд системы</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Fund balance card */}
         <Card className="bg-emerald-500/5 border-emerald-500/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-emerald-500">
@@ -98,11 +114,14 @@ export default function LariekPage() {
             <CardDescription>Деньги, собранные сообществом</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-black text-emerald-500">{charityBalance.toLocaleString("ru")} МР</div>
+            <div className="text-4xl font-black text-emerald-500">
+              {charityBalance.toLocaleString("ru")} МР
+            </div>
             <p className="text-xs text-emerald-500/60 mt-2 uppercase tracking-widest font-bold">Собрано на помощь</p>
           </CardContent>
         </Card>
 
+        {/* Actions card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -111,39 +130,42 @@ export default function LariekPage() {
             <CardDescription>Пожертвовать или попросить помощи</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Выберите вашу карту</Label>
               <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-               <div className="space-y-2">
-                  <Input
-                    type="number"
-                    placeholder="Сумма"
-                    value={donateAmount}
-                    onChange={e => setDonateAmount(e.target.value)}
-                  />
-                  <Button
-                    className="w-full h-10"
-                    variant="emerald"
-                    onClick={handleDonate}
-                    disabled={actionLoading || !selectedCardId || !donateAmount}
-                  >
-                    {actionLoading ? <RiRefreshLine className="animate-spin" /> : <RiHandHeartLine className="mr-2" />} ПОЖЕРТВОВАТЬ
-                  </Button>
-               </div>
-               <div className="flex flex-col justify-end">
-                  <Button
-                    className="w-full h-10"
-                    variant="secondary"
-                    onClick={handleWithdraw}
-                    disabled={actionLoading || !selectedCardId}
-                  >
-                    {actionLoading ? <RiRefreshLine className="animate-spin" /> : "НУЖНА ПОМОЩЬ"}
-                  </Button>
-                  <p className="text-[9px] text-muted-foreground mt-2 text-center">Раз в день для балансов &lt; 1000 МР</p>
-               </div>
+              <div className="space-y-2">
+                <Input
+                  type="number"
+                  placeholder="Сумма"
+                  value={donateAmount}
+                  onChange={e => setDonateAmount(e.target.value)}
+                />
+                <Button
+                  className="w-full h-11"
+                  variant="emerald"
+                  onClick={handleDonate}
+                  disabled={actionLoading || !selectedCardId || !donateAmount}
+                >
+                  {actionLoading ? <RiRefreshLine className="animate-spin" /> : <RiHandHeartLine className="mr-2" />}
+                  ПОЖЕРТВОВАТЬ
+                </Button>
+              </div>
+              <div className="flex flex-col justify-end">
+                <Button
+                  className="w-full h-11"
+                  variant="secondary"
+                  onClick={handleWithdraw}
+                  disabled={actionLoading || !selectedCardId}
+                >
+                  {actionLoading ? <RiRefreshLine className="animate-spin" /> : "НУЖНА ПОМОЩЬ"}
+                </Button>
+                <p className="text-[11px] text-muted-foreground mt-2 text-center">
+                  Раз в день для балансов &lt; 1000 МР
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
