@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readDb, writeDb, Card, CardTier, addXp, calculateLevel, logClick } from "@/lib/db";
 import { getSession, decrypt } from "@/lib/auth";
 import { getCorsHeaders } from "@/lib/cors";
+import { tierUnlockLevel } from "@/lib/constants";
 
 const emojiTiers: CardTier[] = ["gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
 const emojiPool = ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🐛","🦋","🐌","🐞","🐜","🪲","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🐊","🐅","🐆","🦓","🦍","🦧","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🦬","🐃","🐂","🐄","🐎","🐖","🐏","🐑","🦙","🐐","🦌","🐕","🐩","🦮","🐈","🐓","🦃","🦤","🦚","🦜","🦢","🦩","🕊️","🐇","🦝","🦨","🦡","🦫","🦦","🦥","🐁","🐀","🐿️","🦔"];
@@ -58,6 +59,9 @@ export async function POST(req: NextRequest) {
   if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
+  const user = db.users.find(u => u.id === currentUser.id);
+  const { level } = calculateLevel(user?.xp || 0);
+
   const userCards = db.cards.filter(c => c.userId === currentUser.id);
   if (userCards.length >= 25) {
     return NextResponse.json({ error: "Maximum card limit (25) reached" }, { status: 400, headers: corsHeaders });
@@ -65,6 +69,30 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const tier = body.tier as CardTier;
+
+  // Server-side tier level enforcement — frontend locks are purely cosmetic
+  const requiredLevel = tierUnlockLevel[tier] ?? 1;
+  if (level < requiredLevel) {
+    return NextResponse.json(
+      { error: `Куда лезешь? Тариф «${tier}» доступен только с ${requiredLevel} уровня. Качайся.` },
+      { status: 403, headers: corsHeaders }
+    );
+  }
+
+  // Enforce upgrade cost server-side — don't trust client-supplied upgradeCost
+  if (body.sourceCardId) {
+    const sourceCard = db.cards.find(c => c.id === body.sourceCardId && c.userId === currentUser.id);
+    if (!sourceCard) {
+      return NextResponse.json({ error: "Source card not found" }, { status: 404, headers: corsHeaders });
+    }
+    const tierOrder: CardTier[] = ["bronze", "silver", "gold", "platinum", "titanium", "ruby", "emerald", "sapphire", "diamond", "black", "obsidian"];
+    const fromIndex = tierOrder.indexOf(sourceCard.tier);
+    const toIndex = tierOrder.indexOf(tier);
+    if (toIndex <= fromIndex) {
+      return NextResponse.json({ error: "Cannot downgrade a card tier" }, { status: 400, headers: corsHeaders });
+    }
+  }
+
   const existingCodes = db.cards.map((c) => c.emojiCode).filter(Boolean) as string[];
   const emojiCode = emojiTiers.includes(tier) ? generateEmojiCode(existingCodes) : null;
 
@@ -90,10 +118,10 @@ export async function POST(req: NextRequest) {
   const levelUps = addXp(db, currentUser.id, 5);
   writeDb(db);
 
-  const user = db.users.find(u => u.id === currentUser.id);
-  const { level, currentXp, nextXp } = calculateLevel(user?.xp || 0);
+  const updatedUser = db.users.find(u => u.id === currentUser.id);
+  const { level: newLevel, currentXp, nextXp } = calculateLevel(updatedUser?.xp || 0);
 
-  return NextResponse.json({ card: newCard, levelUps, level, currentXp, nextXp, xp: user?.xp }, { status: 201, headers: corsHeaders });
+  return NextResponse.json({ card: newCard, levelUps, level: newLevel, currentXp, nextXp, xp: updatedUser?.xp }, { status: 201, headers: corsHeaders });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -117,9 +145,23 @@ export async function PATCH(req: NextRequest) {
   if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
+  const user = db.users.find(u => u.id === currentUser.id);
+  const { level } = calculateLevel(user?.xp || 0);
+
   const body = await req.json();
   const idx = db.cards.findIndex((c) => c.id === body.id && c.userId === currentUser.id);
   if (idx === -1) return NextResponse.json({ error: "Not found" }, { status: 404, headers: corsHeaders });
+
+  // Server-side tier level enforcement for upgrades too
+  if (body.tier) {
+    const requiredLevel = tierUnlockLevel[body.tier as CardTier] ?? 1;
+    if (level < requiredLevel) {
+      return NextResponse.json(
+        { error: `Куда лезешь? Тариф «${body.tier}» доступен только с ${requiredLevel} уровня. Качайся.` },
+        { status: 403, headers: corsHeaders }
+      );
+    }
+  }
 
   if (body.sourceCardId && body.upgradeCost) {
     if (body.sourceCardId === body.id) {
