@@ -59,45 +59,46 @@ export default function SlotsPage() {
   if (loading)
     return (
       <div className="space-y-6 px-4">
-        <div className="h-5 w-24 bg-secondary rounded animate-pulse" />
-        <div className="h-[420px] bg-secondary rounded-xl animate-pulse" />
+        <div className="h-8 w-32 bg-secondary rounded animate-pulse" />
+        <div className="h-[400px] bg-secondary rounded-xl animate-pulse" />
       </div>
     );
 
   return (
     <GameLayout
-      icon={<RiRefreshLine className="w-5 h-5 rotate-180" />}
       title="Слот-машина"
       description="Три в ряд — джекпот. Две — возврат."
+      icon={<RiRefreshLine className="w-5 h-5 rotate-180" />}
       balance={balance}
     >
-      {/* Reels */}
-      <div className="flex justify-center gap-4 py-8">
-        {[0, 1, 2].map(i => (
-          <SlotReel key={i} targetIndex={reels[i]} spinning={spinning} delay={i * 0.2} />
-        ))}
-      </div>
+      <div className="space-y-8 pb-6">
+        <div className="flex justify-center gap-4 py-8">
+          {[0, 1, 2].map(i => (
+            <SlotReel key={i} targetIndex={reels[i]} spinning={spinning} delay={i * 0.2} />
+          ))}
+        </div>
 
-      {/* Controls */}
-      <div className="max-w-sm mx-auto w-full space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-sm mx-auto">
+          <div className="space-y-2">
             <Label>Ставка</Label>
             <Input type="number" value={bet} onChange={e => setBet(Number(e.target.value))} />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Карта</Label>
             <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} />
           </div>
         </div>
-        <Button
-          onClick={spin}
-          disabled={spinning}
-          className="w-full h-11 font-semibold"
-          variant="gradient"
-        >
-          {spinning ? <RiRefreshLine className="animate-spin w-4 h-4" /> : "Дёрнуть рычаг"}
-        </Button>
+
+        <div className="flex justify-center">
+          <Button
+            onClick={spin}
+            disabled={spinning}
+            className="w-full max-w-xs h-11 font-bold"
+            variant="gradient"
+          >
+            {spinning ? <RiRefreshLine className="animate-spin w-5 h-5" /> : "Дёрнуть рычаг"}
+          </Button>
+        </div>
       </div>
     </GameLayout>
   );
@@ -117,8 +118,6 @@ function SlotReel({ targetIndex, spinning, delay }: { targetIndex: number; spinn
     }
   }, [spinning, targetIndex, controls, delay]);
 
-  const radius = 90;
-
   return (
     <div
       className="w-20 h-32 md:w-24 md:h-40 bg-secondary rounded-xl relative overflow-hidden border shadow-inner flex items-center justify-center"
@@ -126,18 +125,18 @@ function SlotReel({ targetIndex, spinning, delay }: { targetIndex: number; spinn
     >
       <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background z-10 opacity-60 pointer-events-none" />
       <motion.div animate={controls} className="relative w-full h-full" style={{ transformStyle: "preserve-3d" }}>
-        {SYMBOLS.map((symbol, idx) => {
-          const angle = (360 / SYMBOLS.length) * idx;
-          return (
-            <div
-              key={idx}
-              className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl"
-              style={{ transform: `rotateX(${angle}deg) translateZ(${radius}px)`, backfaceVisibility: "hidden" }}
-            >
-              {symbol}
-            </div>
-          );
-        })}
+        {SYMBOLS.map((symbol, idx) => (
+          <div
+            key={idx}
+            className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl"
+            style={{
+              transform: `rotateX(${(360 / SYMBOLS.length) * idx}deg) translateZ(90px)`,
+              backfaceVisibility: "hidden",
+            }}
+          >
+            {symbol}
+          </div>
+        ))}
       </motion.div>
     </div>
   );

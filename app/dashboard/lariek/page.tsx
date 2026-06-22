@@ -81,31 +81,28 @@ export default function LariekPage() {
 
   if (loading)
     return (
-      <div className="space-y-6 px-4 md:px-0">
-        <div className="h-5 w-24 bg-secondary rounded animate-pulse" />
+      <div className="space-y-6">
         <div className="h-8 w-48 bg-secondary rounded animate-pulse" />
         <div className="h-[400px] bg-secondary rounded-xl animate-pulse" />
       </div>
     );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-0">
-      {/* Back navigation — consistent with game pages */}
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors pt-1"
-      >
-        <RiArrowLeftSLine className="w-4 h-4" />
-        На главную
-      </Link>
-
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Ларёк</h1>
-        <p className="text-muted-foreground text-sm mt-1">Благотворительный фонд системы</p>
+    <div className="max-w-4xl mx-auto space-y-8 px-4 md:px-0">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Ларёк</h1>
+          <p className="text-muted-foreground text-sm mt-1">Благотворительный фонд системы</p>
+        </div>
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
+        >
+          <RiArrowLeftSLine className="w-4 h-4" /> Назад
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Fund balance card */}
         <Card className="bg-emerald-500/5 border-emerald-500/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-emerald-500">
@@ -114,14 +111,11 @@ export default function LariekPage() {
             <CardDescription>Деньги, собранные сообществом</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-black text-emerald-500">
-              {charityBalance.toLocaleString("ru")} МР
-            </div>
+            <div className="text-4xl font-black text-emerald-500">{charityBalance.toLocaleString("ru")} МР</div>
             <p className="text-xs text-emerald-500/60 mt-2 uppercase tracking-widest font-bold">Собрано на помощь</p>
           </CardContent>
         </Card>
 
-        {/* Actions card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -130,7 +124,7 @@ export default function LariekPage() {
             <CardDescription>Пожертвовать или попросить помощи</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Выберите вашу карту</Label>
               <CardSelect value={selectedCardId} onValueChange={setSelectedCardId} />
             </div>
@@ -145,7 +139,7 @@ export default function LariekPage() {
                 />
                 <Button
                   className="w-full h-11"
-                  variant="emerald"
+                  variant="gradient"
                   onClick={handleDonate}
                   disabled={actionLoading || !selectedCardId || !donateAmount}
                 >
@@ -162,9 +156,7 @@ export default function LariekPage() {
                 >
                   {actionLoading ? <RiRefreshLine className="animate-spin" /> : "НУЖНА ПОМОЩЬ"}
                 </Button>
-                <p className="text-[11px] text-muted-foreground mt-2 text-center">
-                  Раз в день для балансов &lt; 1000 МР
-                </p>
+                <p className="text-[9px] text-muted-foreground mt-2 text-center">Раз в день для балансов &lt; 1000 МР</p>
               </div>
             </div>
           </CardContent>

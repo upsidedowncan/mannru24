@@ -1,78 +1,93 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { RiArrowLeftSLine, RiWalletLine } from "react-icons/ri";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { RiArrowLeftSLine } from "react-icons/ri";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import type { ReactNode } from "react";
 
 interface GameLayoutProps {
-  /** Icon component from react-icons */
-  icon: ReactNode;
   title: string;
   description: string;
-  /** Current balance to display in the header badge — pass null to hide */
+  icon: React.ReactNode;
   balance: number | null;
-  /** Back link destination, defaults to /dashboard/games */
-  backHref?: string;
-  /** Back link label, defaults to "К играм" */
-  backLabel?: string;
-  /** Max width class, defaults to max-w-2xl */
+  children: React.ReactNode;
   maxWidth?: string;
-  children: ReactNode;
+}
+
+function AnimatedBalance({ value }: { value: number }) {
+  const [displayed, setDisplayed] = useState(value);
+  const [pulse, setPulse] = useState(false);
+  const prevRef = useRef(value);
+
+  useEffect(() => {
+    if (value === prevRef.current) return;
+    const diff = value - prevRef.current;
+    const steps = 30;
+    const stepSize = diff / steps;
+    let current = prevRef.current;
+    let step = 0;
+    setPulse(true);
+    const interval = setInterval(() => {
+      step++;
+      current += stepSize;
+      setDisplayed(Math.round(current));
+      if (step >= steps) {
+        clearInterval(interval);
+        setDisplayed(value);
+        prevRef.current = value;
+        setTimeout(() => setPulse(false), 600);
+      }
+    }, 16);
+    return () => clearInterval(interval);
+  }, [value]);
+
+  const isUp = value > prevRef.current || pulse && displayed > (value - Math.abs(value - prevRef.current));
+
+  return (
+    <motion.div
+      animate={pulse ? { scale: [1, 1.06, 1] } : { scale: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={`flex items-center gap-1.5 text-sm font-semibold tabular-nums transition-colors duration-300 ${
+        pulse ? (isUp ? "text-emerald-500" : "text-destructive") : "text-muted-foreground"
+      }`}
+    >
+      <RiWalletLine className="w-4 h-4 shrink-0" />
+      <span>{displayed.toLocaleString("ru")} МР</span>
+    </motion.div>
+  );
 }
 
 export function GameLayout({
-  icon,
   title,
   description,
+  icon,
   balance,
-  backHref = "/dashboard/games",
-  backLabel = "К играм",
-  maxWidth = "max-w-2xl",
   children,
+  maxWidth = "max-w-2xl",
 }: GameLayoutProps) {
   return (
-    <div className={`${maxWidth} mx-auto space-y-5 px-4 md:px-0`}>
-      {/* Back navigation */}
-      <Link
-        href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors pt-1"
-      >
-        <RiArrowLeftSLine className="w-4 h-4" />
-        {backLabel}
-      </Link>
+    <div className={`${maxWidth} mx-auto space-y-6 px-4 md:px-0`}>
+      <div className="flex items-center justify-between">
+        <Link
+          href="/dashboard/games"
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
+        >
+          <RiArrowLeftSLine className="w-4 h-4" /> К играм
+        </Link>
+        <AnimatePresence>
+          {balance !== null && <AnimatedBalance value={balance} />}
+        </AnimatePresence>
+      </div>
 
       <Card>
-        <CardHeader className="text-center pb-4">
-          {/* Title row */}
-          <CardTitle className="flex items-center justify-center gap-2 text-lg">
-            <span className="text-muted-foreground">{icon}</span>
-            {title}
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center gap-2">
+            {icon} {title}
           </CardTitle>
-          <CardDescription className="text-xs">{description}</CardDescription>
-
-          {/* Live balance badge */}
-          <AnimatePresence>
-            {balance !== null && (
-              <motion.div
-                key={balance}
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.92 }}
-                transition={{ duration: 0.25 }}
-                className="mt-3 flex justify-center"
-              >
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs font-medium text-muted-foreground">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  {balance.toLocaleString("ru")} МР
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <CardDescription>{description}</CardDescription>
         </CardHeader>
-
-        <CardContent className="pb-10">{children}</CardContent>
+        <CardContent>{children}</CardContent>
       </Card>
     </div>
   );
