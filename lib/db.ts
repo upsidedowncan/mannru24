@@ -1,9 +1,17 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from "fs";
 import { readFile, writeFile } from "fs/promises";
 import { join, dirname } from "path";
 import { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel } from "./constants";
 
 export { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel };
+
+// In-memory cache of the parsed DB. We only re-read from disk if the file
+// has been modified since the last read (e.g. a parallel process wrote it).
+// This avoids re-parsing the full JSON on every API request, which is a huge
+// win on slow mount points like /data on Amvera.
+let cachedDb: Database | null = null;
+let cachedMtimeMs = 0;
+let pendingWrite: Promise<void> | null = null;
 
 // On Amvera, /data is the persistent mount point.
 const DB_PATH = process.env.NODE_ENV === "production" ? "/data/db.json" : join(process.cwd(), "data", "db.json");
@@ -201,9 +209,23 @@ export function addXp(db: Database, userId: string, amount: number): number[] {
 }
 
 export function readDb(): Database {
+  // Fast path: serve the in-memory cache if it's still valid.
+  if (cachedDb) {
+    try {
+      const stat = statSync(DB_PATH);
+      if (stat.mtimeMs === cachedMtimeMs) {
+        return cachedDb;
+      }
+    } catch {
+      // File missing or unreadable; fall through to full read
+    }
+  }
+
   if (!existsSync(DB_PATH)) {
     const defaultDb = getDefaultDb();
     writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2));
+    cachedDb = defaultDb;
+    try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
     return defaultDb;
   }
   const raw = readFileSync(DB_PATH, "utf-8");
@@ -211,7 +233,7 @@ export function readDb(): Database {
     const data = JSON.parse(raw);
     // Migration if old format
     if (data.user && !data.users) {
-      return {
+      const migrated: Database = {
         users: [{ ...data.user, id: "legacy-user", passwordHash: "" }],
         cards: data.cards.map((c: any) => ({ ...c, userId: "legacy-user" })),
         transactions: data.transactions.map((t: any) => ({ ...t, userId: "legacy-user" })),
@@ -219,35 +241,52 @@ export function readDb(): Database {
         bonuses: data.bonuses.map((b: any) => ({ ...b, userId: "legacy-user" })),
         allowedOAuthDomains: [],
         oauthApps: [],
+        charityBalance: 0,
       };
+      cachedDb = migrated;
+      try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
+      return migrated;
     }
     if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
     if (!data.oauthApps) data.oauthApps = [];
     if (data.charityBalance === undefined) data.charityBalance = 0;
-    return data as Database;
+    cachedDb = data as Database;
+    try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
+    return cachedDb;
   } catch (e) {
     return getDefaultDb();
   }
 }
 
 export function writeDb(db: Database): void {
+  // Update the cache immediately so subsequent reads in the same request
+  // (or other in-flight requests) don't need to re-read from disk.
+  cachedDb = db;
+  cachedMtimeMs = Date.now();
+
+  // Serialize writes through a single I/O pipeline so a burst of writes
+  // doesn't queue up parallel writeFileSync calls on a slow mount.
+  const prev = pendingWrite ?? Promise.resolve();
+  const next = prev.then(() => doWrite(db));
+  pendingWrite = next.then(() => {}, () => {});
+}
+
+function doWrite(db: Database): void {
   try {
     const dir = dirname(DB_PATH);
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
     writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
-    console.log(`DB successfully written to ${DB_PATH}`);
+    try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
   } catch (error) {
     console.error(`CRITICAL: Failed to write DB to ${DB_PATH}`, error);
-    // Fallback to local path if production path fails
     if (process.env.NODE_ENV === "production" && DB_PATH !== join(process.cwd(), "data", "db.json")) {
       const fallback = join(process.cwd(), "data", "db.json");
       try {
         const fallbackDir = dirname(fallback);
         if (!existsSync(fallbackDir)) mkdirSync(fallbackDir, { recursive: true });
         writeFileSync(fallback, JSON.stringify(db, null, 2));
-        console.log(`Fallback write to ${fallback} successful`);
       } catch (e) {
         console.error(`Fallback write also failed`, e);
       }
