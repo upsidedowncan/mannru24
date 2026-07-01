@@ -1,16 +1,15 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { readFile, writeFile } from "fs/promises";
 import { join, dirname } from "path";
 import { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel } from "./constants";
 
 export { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel };
 
-// In-memory cache of the parsed DB. We only re-read from disk if the file
-// has been modified since the last read (e.g. a parallel process wrote it).
-// This avoids re-parsing the full JSON on every API request, which is a huge
-// win on slow mount points like /data on Amvera.
+// In-memory cache of the parsed DB. We hold the parsed object for the
+// lifetime of the process and invalidate it on every write. This avoids
+// re-parsing the full JSON (and avoiding statSync on slow mount points
+// like /data on Amvera) on every API request.
 let cachedDb: Database | null = null;
-let cachedMtimeMs = 0;
 let pendingWrite: Promise<void> | null = null;
 
 // On Amvera, /data is the persistent mount point.
@@ -209,23 +208,15 @@ export function addXp(db: Database, userId: string, amount: number): number[] {
 }
 
 export function readDb(): Database {
-  // Fast path: serve the in-memory cache if it's still valid.
-  if (cachedDb) {
-    try {
-      const stat = statSync(DB_PATH);
-      if (stat.mtimeMs === cachedMtimeMs) {
-        return cachedDb;
-      }
-    } catch {
-      // File missing or unreadable; fall through to full read
-    }
-  }
+  // Fast path: return the in-memory cache. Since this process is the only
+  // writer (single-instance Amvera deployment), the cache is always
+  // up-to-date after a writeDb() call.
+  if (cachedDb) return cachedDb;
 
   if (!existsSync(DB_PATH)) {
     const defaultDb = getDefaultDb();
     writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2));
     cachedDb = defaultDb;
-    try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
     return defaultDb;
   }
   const raw = readFileSync(DB_PATH, "utf-8");
@@ -233,7 +224,7 @@ export function readDb(): Database {
     const data = JSON.parse(raw);
     // Migration if old format
     if (data.user && !data.users) {
-      const migrated: Database = {
+      cachedDb = {
         users: [{ ...data.user, id: "legacy-user", passwordHash: "" }],
         cards: data.cards.map((c: any) => ({ ...c, userId: "legacy-user" })),
         transactions: data.transactions.map((t: any) => ({ ...t, userId: "legacy-user" })),
@@ -243,15 +234,12 @@ export function readDb(): Database {
         oauthApps: [],
         charityBalance: 0,
       };
-      cachedDb = migrated;
-      try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
-      return migrated;
+      return cachedDb;
     }
     if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
     if (!data.oauthApps) data.oauthApps = [];
     if (data.charityBalance === undefined) data.charityBalance = 0;
     cachedDb = data as Database;
-    try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
     return cachedDb;
   } catch (e) {
     return getDefaultDb();
@@ -262,7 +250,6 @@ export function writeDb(db: Database): void {
   // Update the cache immediately so subsequent reads in the same request
   // (or other in-flight requests) don't need to re-read from disk.
   cachedDb = db;
-  cachedMtimeMs = Date.now();
 
   // Serialize writes through a single I/O pipeline so a burst of writes
   // doesn't queue up parallel writeFileSync calls on a slow mount.
@@ -278,7 +265,6 @@ function doWrite(db: Database): void {
       mkdirSync(dir, { recursive: true });
     }
     writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
-    try { cachedMtimeMs = statSync(DB_PATH).mtimeMs; } catch {}
   } catch (error) {
     console.error(`CRITICAL: Failed to write DB to ${DB_PATH}`, error);
     if (process.env.NODE_ENV === "production" && DB_PATH !== join(process.cwd(), "data", "db.json")) {
