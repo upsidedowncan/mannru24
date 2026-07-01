@@ -26,7 +26,7 @@ function pickOutcome() {
 
 function initCbRate(db: Database) {
   if (!db.cbRate) {
-    (db as any).cbRate = {
+    db.cbRate = {
       currentRate: 16.0,
       quarter: 1,
       year: 2025,
@@ -40,7 +40,7 @@ export async function GET() {
   const db = readDb();
   initCbRate(db);
   writeDb(db);
-  return NextResponse.json((db as any).cbRate);
+  return NextResponse.json(db.cbRate);
 }
 
 export async function POST(req: Request) {
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   }
 
   // Advance the economic calendar
-  const cbRate = (db as any).cbRate;
+  const cbRate = db.cbRate!;
   cbRate.currentRate = Math.max(1, Math.round((cbRate.currentRate + outcome.delta) * 100) / 100);
   cbRate.quarter = cbRate.quarter === 4 ? 1 : cbRate.quarter + 1;
   if (cbRate.quarter === 1) cbRate.year += 1;

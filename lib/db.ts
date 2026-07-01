@@ -108,6 +108,18 @@ export interface MnkMarket {
   crashed: boolean;
 }
 
+export interface CbRatePoint {
+  quarter: string;
+  rate: number;
+}
+
+export interface CbRateState {
+  currentRate: number;
+  quarter: number;
+  year: number;
+  history: CbRatePoint[];
+}
+
 export interface Database {
   users: UserProfile[];
   cards: Card[];
@@ -118,6 +130,7 @@ export interface Database {
   oauthApps: OAuthApp[];
   mnkMarket?: MnkMarket;
   charityBalance?: number;
+  cbRate?: CbRateState;
 }
 
 function getDefaultDb(): Database {
