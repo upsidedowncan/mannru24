@@ -34,8 +34,6 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404, headers: corsHeaders });
 
   const { level, currentXp, nextXp } = calculateLevel(user.xp);
-  logClick(db, currentUser.id, "Просмотр профиля");
-  writeDb(db);
   return NextResponse.json({ ...user, currentXp, nextXp }, { headers: corsHeaders });
 }
 

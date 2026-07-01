@@ -48,8 +48,6 @@ export async function GET(req: NextRequest) {
   if (!currentUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
 
   const db = readDb();
-  logClick(db, currentUser.id, "Просмотр списка карт");
-  writeDb(db);
   return NextResponse.json(db.cards.filter(c => c.userId === currentUser.id), { headers: corsHeaders });
 }
 
