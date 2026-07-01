@@ -1,5 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { readFile, writeFile } from "fs/promises";
+import { writeFile as writeFileAsync, mkdir as mkdirAsync } from "fs/promises";
 import { join, dirname } from "path";
 import { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel } from "./constants";
 
@@ -7,10 +6,51 @@ export { tierUnlockLevel, pageUnlockLevel, emojiCodeUnlockLevel };
 
 // In-memory cache of the parsed DB. We hold the parsed object for the
 // lifetime of the process and invalidate it on every write. This avoids
-// re-parsing the full JSON (and avoiding statSync on slow mount points
+// re-parsing the full JSON (and avoiding sync I/O on slow mount points
 // like /data on Amvera) on every API request.
 let cachedDb: Database | null = null;
+// Set to true after the initial async load from disk completes.
+let dbLoaded = false;
 let pendingWrite: Promise<void> | null = null;
+
+// Kick off the initial load from disk asynchronously at module load. The
+// first request will see a freshly-seeded empty DB; once the file loads
+// (a few hundred ms on a healthy mount, longer on a slow one), the cache
+// is populated and subsequent requests see the real data.
+loadFromDisk();
+
+async function loadFromDisk(): Promise<void> {
+  try {
+    const { readFile } = await import("fs/promises");
+    const raw = await readFile(DB_PATH, "utf-8");
+    const data = JSON.parse(raw);
+    if (data.user && !data.users) {
+      cachedDb = {
+        users: [{ ...data.user, id: "legacy-user", passwordHash: "" }],
+        cards: data.cards.map((c: any) => ({ ...c, userId: "legacy-user" })),
+        transactions: data.transactions.map((t: any) => ({ ...t, userId: "legacy-user" })),
+        tasks: data.tasks.map((t: any) => ({ ...t, userId: "legacy-user" })),
+        bonuses: data.bonuses.map((b: any) => ({ ...b, userId: "legacy-user" })),
+        allowedOAuthDomains: [],
+        oauthApps: [],
+        charityBalance: 0,
+      };
+      dbLoaded = true;
+      return;
+    }
+    if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
+    if (!data.oauthApps) data.oauthApps = [];
+    if (data.charityBalance === undefined) data.charityBalance = 0;
+    cachedDb = data as Database;
+    dbLoaded = true;
+  } catch {
+    // File missing or unreadable. Seed an empty DB and persist it in the
+    // background so subsequent server starts have something to load.
+    if (!cachedDb) cachedDb = getDefaultDb();
+    dbLoaded = true;
+    void writeDbInternal(cachedDb);
+  }
+}
 
 // On Amvera, /data is the persistent mount point.
 const DB_PATH = process.env.NODE_ENV === "production" ? "/data/db.json" : join(process.cwd(), "data", "db.json");
@@ -213,37 +253,11 @@ export function readDb(): Database {
   // up-to-date after a writeDb() call.
   if (cachedDb) return cachedDb;
 
-  if (!existsSync(DB_PATH)) {
-    const defaultDb = getDefaultDb();
-    writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2));
-    cachedDb = defaultDb;
-    return defaultDb;
-  }
-  const raw = readFileSync(DB_PATH, "utf-8");
-  try {
-    const data = JSON.parse(raw);
-    // Migration if old format
-    if (data.user && !data.users) {
-      cachedDb = {
-        users: [{ ...data.user, id: "legacy-user", passwordHash: "" }],
-        cards: data.cards.map((c: any) => ({ ...c, userId: "legacy-user" })),
-        transactions: data.transactions.map((t: any) => ({ ...t, userId: "legacy-user" })),
-        tasks: data.tasks.map((t: any) => ({ ...t, userId: "legacy-user" })),
-        bonuses: data.bonuses.map((b: any) => ({ ...b, userId: "legacy-user" })),
-        allowedOAuthDomains: [],
-        oauthApps: [],
-        charityBalance: 0,
-      };
-      return cachedDb;
-    }
-    if (!data.allowedOAuthDomains) data.allowedOAuthDomains = [];
-    if (!data.oauthApps) data.oauthApps = [];
-    if (data.charityBalance === undefined) data.charityBalance = 0;
-    cachedDb = data as Database;
-    return cachedDb;
-  } catch (e) {
-    return getDefaultDb();
-  }
+  // Cache is still cold (the async load from disk hasn't finished). Return
+  // a freshly-seeded default DB so the request can proceed. Subsequent
+  // requests after the load completes will see real data.
+  cachedDb = getDefaultDb();
+  return cachedDb;
 }
 
 export function writeDb(db: Database): void {
@@ -251,28 +265,32 @@ export function writeDb(db: Database): void {
   // (or other in-flight requests) don't need to re-read from disk.
   cachedDb = db;
 
-  // Serialize writes through a single I/O pipeline so a burst of writes
-  // doesn't queue up parallel writeFileSync calls on a slow mount.
+  // If the initial async load hasn't completed yet, don't write — we'd
+  // overwrite the real on-disk data with the empty default the request
+  // was served from. The cache is still consistent for the current
+  // process; the data will be persisted on the next write after load.
+  if (!dbLoaded) return;
+
+  // Serialize writes through a single async I/O pipeline so a burst of
+  // writes doesn't queue up parallel file writes on a slow mount, and
+  // (critically) so we never block the event loop with synchronous I/O.
   const prev = pendingWrite ?? Promise.resolve();
-  const next = prev.then(() => doWrite(db));
+  const next = prev.then(() => writeDbInternal(db));
   pendingWrite = next.then(() => {}, () => {});
 }
 
-function doWrite(db: Database): void {
+async function writeDbInternal(db: Database): Promise<void> {
   try {
     const dir = dirname(DB_PATH);
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
-    writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+    await mkdirAsync(dir, { recursive: true });
+    await writeFileAsync(DB_PATH, JSON.stringify(db, null, 2));
   } catch (error) {
     console.error(`CRITICAL: Failed to write DB to ${DB_PATH}`, error);
     if (process.env.NODE_ENV === "production" && DB_PATH !== join(process.cwd(), "data", "db.json")) {
       const fallback = join(process.cwd(), "data", "db.json");
       try {
-        const fallbackDir = dirname(fallback);
-        if (!existsSync(fallbackDir)) mkdirSync(fallbackDir, { recursive: true });
-        writeFileSync(fallback, JSON.stringify(db, null, 2));
+        await mkdirAsync(dirname(fallback), { recursive: true });
+        await writeFileAsync(fallback, JSON.stringify(db, null, 2));
       } catch (e) {
         console.error(`Fallback write also failed`, e);
       }
