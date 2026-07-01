@@ -8,7 +8,7 @@ import { LevelUpDialog } from "@/components/LevelUpDialog";
 
 export const metadata: Metadata = {
   title: "Маннру Банк — Ваш цифровой банк",
-  description: "Современный цифровой банк с выгодными условиями, кэшбэком и бонусаниеми",
+  description: "Современный цифровой банк с выгодными условиями, кэшбэком и бонусами",
 };
 
 export default function RootLayout({

@@ -181,7 +181,7 @@ export default function LariekPage() {
             <RiStore2Line className="w-5 h-5 text-primary" /> Управление
           </CardTitle>
           <CardDescription>
-            Пожертвовать или попросить помощи
+            Пожертвова䐬 или попросить помощи
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
