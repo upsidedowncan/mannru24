@@ -92,6 +92,16 @@ export async function GET() {
   }
 
   const market = db.mnkMarket;
+
+  // Auto-reset crashed market after 60s cooldown so users can trade again
+  if (market.crashed && Date.now() - market.startTime > 60_000) {
+    market.crashed = false;
+    market.basePrice = STARTING_PRICE;
+    market.startTime = Date.now();
+    market.candles = [];
+    writeDb(db);
+  }
+
   const user = db.users.find((u) => u.id === session.user.id);
 
   if (market.crashed) {
@@ -154,6 +164,7 @@ export async function GET() {
   // Crash check
   if (currentPrice >= CRASH_THRESHOLD) {
     market.crashed = true;
+    market.candles = closedCandles;
     writeDb(db);
     return NextResponse.json({
       price: currentPrice,
@@ -165,12 +176,9 @@ export async function GET() {
     });
   }
 
-  // Only write when the candles array actually changed
-  const prevCount = market.candles.length;
+  // Candles are derived from startTime+basePrice+seed, so no need to persist
+  // them on every read — keep them in memory only.
   market.candles = closedCandles;
-  if (market.candles.length !== prevCount) {
-    writeDb(db);
-  }
 
   const firstPrice = closedCandles.length > 0 ? closedCandles[0].open : currentPrice;
   const priceChangePercent =
