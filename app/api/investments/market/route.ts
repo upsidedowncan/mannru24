@@ -3,27 +3,75 @@ import { readDb, writeDb } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 const CANDLE_DURATION = 10_000;
-const SINE_PERIOD = 90_000;
-const SINE_AMPLITUDE = 0.4;
 const MAX_CANDLES = 100;
 const CRASH_THRESHOLD = 100_000;
 const STARTING_PRICE = 0.1;
+// Max ±% move per candle (volatility)
+const VOLATILITY = 0.06;
 
-function priceAt(elapsedMs: number, base: number): number {
-  return base * (1 + SINE_AMPLITUDE * Math.sin((2 * Math.PI * elapsedMs) / SINE_PERIOD));
+/**
+ * Tiny seeded PRNG — mulberry32.
+ * Returns a float in [0, 1) deterministically from a uint32 seed.
+ * This lets us rebuild any historical candle price purely from its index
+ * without storing every tick in the DB.
+ */
+function mulberry32(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-function buildCandle(candleStartMs: number, startTime: number, base: number) {
-  const e0 = candleStartMs - startTime;
-  const samples = [0, 0.25, 0.5, 0.75, 1].map((t) =>
-    priceAt(e0 + t * CANDLE_DURATION, base)
-  );
+/**
+ * Compute the close price of candle at `index` given the market's seed and base.
+ * We replay the random walk from candle 0 up to `index` — this is O(n) but
+ * n is capped at MAX_CANDLES (100) so it's instant.
+ */
+function closePriceAt(index: number, marketSeed: number, basePrice: number): number {
+  let price = basePrice;
+  for (let i = 0; i <= index; i++) {
+    const rng = mulberry32(marketSeed ^ (i * 2654435761));
+    // 50/50 direction + random magnitude up to VOLATILITY
+    const direction = rng() < 0.5 ? 1 : -1;
+    const magnitude = rng() * VOLATILITY;
+    price = Math.max(0.001, price * (1 + direction * magnitude));
+  }
+  return price;
+}
+
+/**
+ * Build a full OHLC candle for the given index.
+ * Open = previous candle's close (or basePrice for index 0).
+ * We sample 5 intra-candle ticks using sub-seeds for realistic wicks.
+ */
+function buildCandle(
+  index: number,
+  candleStartMs: number,
+  marketSeed: number,
+  basePrice: number
+): { time: number; open: number; high: number; low: number; close: number } {
+  const open = index === 0 ? basePrice : closePriceAt(index - 1, marketSeed, basePrice);
+  const close = closePriceAt(index, marketSeed, basePrice);
+
+  // Generate a few intra-candle samples for realistic H/L wicks
+  const samples = [open, close];
+  for (let t = 1; t <= 3; t++) {
+    const tickRng = mulberry32(marketSeed ^ ((index * 7 + t) * 2654435761));
+    const dir = tickRng() < 0.5 ? 1 : -1;
+    const mag = tickRng() * (VOLATILITY / 2);
+    samples.push(Math.max(0.001, open * (1 + dir * mag)));
+  }
+
   return {
     time: candleStartMs,
-    open: priceAt(e0, base),
+    open,
     high: Math.max(...samples),
     low: Math.min(...samples),
-    close: priceAt(e0 + CANDLE_DURATION, base),
+    close,
   };
 }
 
@@ -58,64 +106,58 @@ export async function GET() {
   }
 
   const now = Date.now();
-  const elapsed = now - market.startTime;
-  const currentPrice = priceAt(elapsed, market.basePrice);
 
-  // Determine starting point for candle generation
-  const lastStoredEnd =
-    market.candles.length > 0
-      ? market.candles[market.candles.length - 1].time + CANDLE_DURATION
-      : market.startTime;
+  // Derive a stable seed from the market's start time so the walk is
+  // reproducible across server restarts but unique per market session.
+  const marketSeed = (market.startTime >>> 0) ^ 0xdeadbeef;
 
-  // If gap is too large, skip old history to avoid computing thousands of candles
-  const maxBackfill = MAX_CANDLES * CANDLE_DURATION;
-  let candleStart = lastStoredEnd;
-  if (now - candleStart > maxBackfill) {
-    const newStart = now - maxBackfill;
-    const sincStart = newStart - market.startTime;
-    candleStart =
-      market.startTime + Math.floor(sincStart / CANDLE_DURATION) * CANDLE_DURATION;
-    market.candles = [];
+  // Figure out which candle indices we need
+  const totalElapsed = now - market.startTime;
+  const currentCandleIndex = Math.floor(totalElapsed / CANDLE_DURATION);
+
+  // Build / refresh closed candles (trim to MAX_CANDLES)
+  const startIndex = Math.max(0, currentCandleIndex - MAX_CANDLES);
+  const closedCandles = [];
+  for (let i = startIndex; i < currentCandleIndex; i++) {
+    closedCandles.push(
+      buildCandle(
+        i,
+        market.startTime + i * CANDLE_DURATION,
+        marketSeed,
+        market.basePrice
+      )
+    );
   }
 
-  let didAddCandles = false;
-  while (candleStart + CANDLE_DURATION <= now) {
-    market.candles.push(buildCandle(candleStart, market.startTime, market.basePrice));
-    candleStart += CANDLE_DURATION;
-    didAddCandles = true;
-  }
+  // Current price = close of last completed candle + partial move into current candle
+  const lastClose =
+    currentCandleIndex > 0
+      ? closePriceAt(currentCandleIndex - 1, marketSeed, market.basePrice)
+      : market.basePrice;
 
-  if (market.candles.length > MAX_CANDLES) {
-    market.candles = market.candles.slice(-MAX_CANDLES);
-  }
+  const elapsedInCandle = totalElapsed % CANDLE_DURATION;
+  const partialFraction = elapsedInCandle / CANDLE_DURATION;
+  const targetClose = closePriceAt(currentCandleIndex, marketSeed, market.basePrice);
+  // Linear interpolation so the price moves smoothly within the candle
+  const currentPrice = lastClose + (targetClose - lastClose) * partialFraction;
 
-  // Build the current forming candle
-  const ccE0 = candleStart - market.startTime;
-  const elapsedInCandle = now - candleStart;
-  const numSamples = Math.max(2, Math.floor(elapsedInCandle / 1000) + 1);
-  let cHigh = priceAt(ccE0, market.basePrice);
-  let cLow = cHigh;
-  for (let i = 1; i <= numSamples; i++) {
-    const p = priceAt(ccE0 + (i / numSamples) * elapsedInCandle, market.basePrice);
-    if (p > cHigh) cHigh = p;
-    if (p < cLow) cLow = p;
-  }
-  cHigh = Math.max(cHigh, currentPrice);
-  cLow = Math.min(cLow, currentPrice);
-
+  // Current (forming) candle
+  const ccOpen = lastClose;
+  const ccSamples = [ccOpen, currentPrice];
   const currentCandle = {
-    time: candleStart,
-    open: priceAt(ccE0, market.basePrice),
-    high: cHigh,
-    low: cLow,
+    time: market.startTime + currentCandleIndex * CANDLE_DURATION,
+    open: ccOpen,
+    high: Math.max(...ccSamples),
+    low: Math.min(...ccSamples),
   };
 
+  // Crash check
   if (currentPrice >= CRASH_THRESHOLD) {
     market.crashed = true;
     writeDb(db);
     return NextResponse.json({
       price: currentPrice,
-      candles: market.candles,
+      candles: closedCandles,
       currentCandle,
       mnkHoldings: user?.mnkHoldings ?? 0,
       crashed: true,
@@ -123,18 +165,20 @@ export async function GET() {
     });
   }
 
-  if (didAddCandles) {
+  // Only write when the candles array actually changed
+  const prevCount = market.candles.length;
+  market.candles = closedCandles;
+  if (market.candles.length !== prevCount) {
     writeDb(db);
   }
 
-  const firstPrice =
-    market.candles.length > 0 ? market.candles[0].open : currentCandle.open;
+  const firstPrice = closedCandles.length > 0 ? closedCandles[0].open : currentPrice;
   const priceChangePercent =
     firstPrice > 0 ? ((currentPrice - firstPrice) / firstPrice) * 100 : 0;
 
   return NextResponse.json({
     price: currentPrice,
-    candles: market.candles,
+    candles: closedCandles,
     currentCandle,
     mnkHoldings: user?.mnkHoldings ?? 0,
     crashed: false,
