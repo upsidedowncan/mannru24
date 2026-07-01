@@ -20,7 +20,6 @@ import {
   RiHandHeartLine,
   RiRefreshLine,
   RiArrowLeftSLine,
-  RiHeartHandLine,
   RiCoinLine,
 } from "react-icons/ri";
 import { CardSelect } from "@/components/CardSelect";
@@ -127,7 +126,6 @@ export default function LariekPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header — same pattern as dashboard */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Ларёк</h1>
@@ -143,7 +141,6 @@ export default function LariekPage() {
         </Link>
       </div>
 
-      {/* Stats row — mirrors dashboard stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -178,7 +175,6 @@ export default function LariekPage() {
         </Card>
       </div>
 
-      {/* Action card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -200,7 +196,6 @@ export default function LariekPage() {
           <Separator />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Donate */}
             <div className="space-y-3">
               <div className="space-y-1">
                 <Label className="text-sm text-muted-foreground">
@@ -229,7 +224,6 @@ export default function LariekPage() {
               </Button>
             </div>
 
-            {/* Withdraw */}
             <div className="flex flex-col justify-end space-y-3">
               <div className="space-y-1">
                 <p className="text-sm font-medium">Нужна помощь?</p>
@@ -246,7 +240,7 @@ export default function LariekPage() {
                 {actionLoading ? (
                   <RiRefreshLine className="animate-spin mr-2" />
                 ) : (
-                  <RiHeartHandLine className="mr-2" />
+                  <RiHandHeartLine className="mr-2" />
                 )}
                 Попросить помощи
               </Button>
